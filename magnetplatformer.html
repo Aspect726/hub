@@ -1,0 +1,3407 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Magnet Platformer</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #0f1216;
+        color: #eee;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial;
+      }
+      #wrap {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      canvas {
+        background: #2b2f36;
+        border: 2px solid #3d4552;
+      }
+      #hud {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        top: 10px;
+        font-size: 14px;
+        z-index: 5;
+        text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .pill {
+        display: inline-block;
+        border: 1px solid #333;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        color: #bbb;
+        background: #101010;
+        white-space: nowrap;
+      }
+      .pill.offline {
+        color: #ffb3b3;
+        border-color: #5a2a2a;
+        background: #1a0f0f;
+      }
+      .miniBtn {
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+        border-color: #3a3a3a !important;
+      }
+      #fatal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.88);
+        z-index: 9999;
+        padding: 24px;
+      }
+      #fatal .panel {
+        width: min(900px, 96vw);
+        border: 1px solid #333;
+        background: #151515;
+        padding: 16px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+      }
+      #fatal .title {
+        font-size: 16px;
+        margin: 0 0 10px;
+        color: #ffb3b3;
+      }
+      #fatal pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        color: #ddd;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      #win {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.72);
+        z-index: 30;
+        text-align: center;
+        padding: 24px;
+      }
+      #win .panel {
+        width: min(560px, 92vw);
+        border: 1px solid #333;
+        background: #151515;
+        padding: 22px 20px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+      }
+      #win h1 {
+        margin: 0 0 10px;
+        font-size: 28px;
+        letter-spacing: 0.3px;
+      }
+      #win p {
+        margin: 8px 0;
+        font-size: 16px;
+        color: #ddd;
+      }
+      #win .time {
+        font-size: 20px;
+        margin-top: 10px;
+      }
+      #win button {
+        margin-top: 12px;
+        padding: 10px 14px;
+        border: 1px solid #444;
+        background: #222;
+        color: #eee;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      #win button:hover {
+        background: #2a2a2a;
+      }
+      #win button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      #win .muted {
+        color: #aaa;
+        font-size: 12px;
+        margin-top: 10px;
+        line-height: 1.35;
+      }
+      #menu {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 25;
+        padding: 24px;
+      }
+      #menu .panel {
+        width: min(900px, 95vw);
+        border: 1px solid #333;
+        background: #151515;
+        padding: 18px 18px 16px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+      }
+      #menu h1 {
+        margin: 0 0 10px;
+        font-size: 28px;
+      }
+      #menu p {
+        margin: 6px 0 14px;
+        color: #ccc;
+      }
+      #menu .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-top: 8px;
+      }
+      #menu button,
+      #menu select,
+      #menu input {
+        padding: 10px 14px;
+        border: 1px solid #444;
+        background: #222;
+        color: #eee;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      #menu select {
+        cursor: default;
+        background: #121212;
+      }
+      #menu input {
+        cursor: text;
+        background: #121212;
+      }
+      #menu button:hover {
+        background: #2a2a2a;
+      }
+      #menu button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      #menu .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 14px;
+      }
+      #menu .card {
+        border: 1px solid #333;
+        background: #141414;
+        padding: 12px;
+      }
+      #menu .meta {
+        font-size: 13px;
+        color: #aaa;
+        margin-top: 12px;
+        line-height: 1.35;
+      }
+      .box {
+        margin-top: 12px;
+        border: 1px solid #2f2f2f;
+        background: #101010;
+        padding: 10px;
+        font-size: 13px;
+        color: #ddd;
+      }
+      .box .hdr {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        color: #bbb;
+        margin-bottom: 6px;
+        font-size: 12px;
+      }
+      .box table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .box th,
+      .box td {
+        border-top: 1px solid #222;
+        padding: 6px 4px;
+        text-align: left;
+      }
+      .box th {
+        color: #aaa;
+        font-weight: 600;
+        font-size: 12px;
+      }
+      .box .empty {
+        color: #777;
+        padding: 8px 0 4px;
+      }
+      .box .err {
+        color: #ffb3b3;
+        padding: 8px 0 4px;
+      }
+      #editor {
+        position: fixed;
+        inset: 0;
+        display: none;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 26;
+        padding: 16px;
+        box-sizing: border-box;
+        pointer-events: none;
+      }
+      #editorDock {
+        position: absolute;
+        left: 16px;
+        top: 16px;
+        pointer-events: auto;
+        min-width: 18px;
+        min-height: 56px;
+      }
+      #editorDock .panel {
+        width: min(460px, calc(100vw - 32px));
+        max-height: calc(100vh - 32px);
+        overflow: auto;
+        border: 1px solid #333;
+        background: #151515;
+        padding: 14px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+        pointer-events: auto;
+      }
+      #editor h2 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+      #editor label {
+        display: block;
+        font-size: 12px;
+        color: #bbb;
+        margin-top: 10px;
+      }
+      #editor select,
+      #editor input,
+      #editor textarea,
+      #editor button:not(#edDockToggle) {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 6px;
+        padding: 8px 10px;
+        border: 1px solid #444;
+        background: #121212;
+        color: #eee;
+        font-size: 13px;
+      }
+      #editor button {
+        background: #222;
+        cursor: pointer;
+      }
+      #editor button:hover {
+        background: #2a2a2a;
+      }
+      #editor button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      #editor .btnRow {
+        display: flex;
+        gap: 8px;
+      }
+      #editor .btnRow button {
+        width: 50%;
+      }
+      #editor .smallRow {
+        display: flex;
+        gap: 8px;
+      }
+      #editor .smallRow > div {
+        flex: 1;
+      }
+      #editor .req {
+        margin-top: 10px;
+        font-size: 12px;
+        color: #bbb;
+        line-height: 1.35;
+        border: 1px solid #2a2a2a;
+        background: #101010;
+        padding: 8px;
+      }
+      #edDockToggle {
+        position: absolute;
+        top: 18px;
+        right: -18px;
+        width: 18px !important;
+        height: 56px !important;
+        border: 1px solid #333;
+        border-left: none;
+        background: rgba(20, 20, 20, 0.95);
+        color: #ddd;
+        cursor: pointer;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px !important;
+        line-height: 1 !important;
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+        user-select: none;
+        pointer-events: auto;
+        box-sizing: border-box !important;
+      }
+      #edDockToggle:hover {
+        background: #1f1f1f;
+      }
+      #editorDock.closed .panel {
+        display: none;
+      }
+      #editorDock.closed #edDockToggle {
+        right: auto;
+        left: 0;
+        border-left: 1px solid #333;
+        border-right: none;
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      #palette {
+        position: fixed;
+        right: 10px;
+        top: 10px;
+        z-index: 27;
+        display: none;
+        border: 1px solid #333;
+        background: rgba(20, 20, 20, 0.9);
+        padding: 10px 10px 8px;
+        font-size: 12px;
+        line-height: 1.35;
+        max-width: 420px;
+        pointer-events: auto;
+      }
+      #palette .title {
+        font-size: 12px;
+        color: #ddd;
+        margin-bottom: 6px;
+      }
+      #palette .line {
+        color: #bbb;
+      }
+      #palette .hot {
+        color: #eee;
+      }
+      #publishedBrowser {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 29;
+        padding: 24px;
+      }
+      #publishedBrowser .panel {
+        width: min(860px, 96vw);
+        max-height: min(780px, calc(100vh - 48px));
+        overflow: hidden;
+        border: 1px solid #333;
+        background: #151515;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+        display: flex;
+        flex-direction: column;
+      }
+      #publishedBrowser .top {
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid #222;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      #publishedBrowser .top .left {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      #publishedBrowser .top input {
+        width: min(360px, 60vw);
+        padding: 8px 10px;
+        border: 1px solid #444;
+        background: #121212;
+        color: #eee;
+      }
+      #publishedBrowser .body {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 0;
+        flex: 1;
+        min-height: 0;
+      }
+      #publishedBrowser .list {
+        border-right: 1px solid #222;
+        overflow: auto;
+      }
+      #publishedBrowser .item {
+        padding: 10px 12px;
+        border-bottom: 1px solid #1e1e1e;
+        cursor: pointer;
+      }
+      #publishedBrowser .item:hover {
+        background: #3d3d3d;
+      }
+      #publishedBrowser .item.active {
+        background: #5e5e5e;
+      }
+      #publishedBrowser .name {
+        font-size: 14px;
+        color: #eee;
+      }
+      #publishedBrowser .sub {
+        font-size: 12px;
+        color: #aaa;
+        margin-top: 2px;
+        line-height: 1.35;
+      }
+      #publishedBrowser .detail {
+        padding: 12px;
+        overflow: auto;
+        min-height: 0;
+      }
+      #publishedBrowser .detail h3 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        maxlength: 300px;
+      }
+      #publishedBrowser .detail .muted {
+        color: #aaa;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+      #publishedBrowser .detail .btnRow {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      #publishedBrowser button {
+        padding: 10px 14px;
+        border: 1px solid #444;
+        background: #222;
+        color: #eee;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      #publishedBrowser button:hover {
+        background: #2a2a2a;
+      }
+      #publishedBrowser button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      #publishedBrowser .adminBox {
+        margin-top: 12px;
+        border: 1px solid #2a2a2a;
+        background: #101010;
+        padding: 10px;
+      }
+      #publishedBrowser .adminBox .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      #publishedBrowser .adminBox select {
+        padding: 8px 10px;
+        border: 1px solid #444;
+        background: #121212;
+        color: #eee;
+      }
+      #publishedBrowser .adminBox .small {
+        font-size: 12px;
+        color: #aaa;
+        line-height: 1.35;
+        margin-top: 6px;
+      }
+      #authModal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.82);
+        z-index: 31;
+        padding: 24px;
+      }
+      #authModal .panel {
+        width: min(560px, 92vw);
+        border: 1px solid #333;
+        background: #151515;
+        padding: 18px 18px 14px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+      }
+      #authModal h2 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+      #authModal label {
+        display: block;
+        font-size: 12px;
+        color: #bbb;
+        margin-top: 10px;
+      }
+      #authModal input {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 6px;
+        padding: 10px 12px;
+        border: 1px solid #444;
+        background: #121212;
+        color: #eee;
+        font-size: 14px;
+      }
+      #authModal .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      #authModal button {
+        padding: 10px 14px;
+        border: 1px solid #444;
+        background: #222;
+        color: #eee;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      #authModal button:hover {
+        background: #2a2a2a;
+      }
+      #authModal button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      #authModal .status {
+        margin-top: 10px;
+        color: #ddd;
+        font-size: 13px;
+        line-height: 1.35;
+      }
+      #authModal .status.err {
+        color: #ffb3b3;
+      }
+      @media (max-width: 820px) {
+        #publishedBrowser .body {
+          grid-template-columns: 1fr;
+        }
+        #publishedBrowser .list {
+          border-right: none;
+          border-bottom: 1px solid #222;
+          max-height: 42vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="fatal">
+      <div class="panel">
+        <div class="title">Error</div>
+        <pre id="fatalMsg"></pre>
+      </div>
+    </div>
+    <div id="hud"></div>
+
+    <div id="win" role="dialog" aria-modal="true">
+      <div class="panel">
+        <h1>You Win</h1>
+        <p class="time" id="winTime"></p>
+        <button id="submitTime" type="button" style="display: none">
+          Submit campaign time
+        </button>
+        <button id="playAgain" type="button">Play again</button>
+        <div class="muted" id="winNote"></div>
+      </div>
+    </div>
+
+    <div id="authModal" role="dialog" aria-modal="true">
+      <div class="panel">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+          "
+        >
+          <h2 style="margin: 0">Account</h2>
+          <button id="btnCloseAuth" type="button" class="miniBtn">Close</button>
+        </div>
+        <label>Username</label>
+        <input id="authUsername" type="text" />
+        <label>Password</label>
+        <input id="authPassword" type="password" />
+        <div class="row">
+          <button id="btnSignup" type="button">Sign up</button>
+          <button id="btnLogin" type="button">Log in</button>
+          <button id="btnLogout" type="button" disabled>Log out</button>
+        </div>
+        <div id="authStatus" class="status">Not logged in.</div>
+      </div>
+    </div>
+
+    <div id="publishedBrowser" role="dialog" aria-modal="true">
+      <div class="panel">
+        <div class="top">
+          <div class="left">
+            <div style="font-size: 16px">Published Levels</div>
+            <input
+              id="pubSearch"
+              type="text"
+              placeholder="Search by level name or author..."
+            />
+            <button
+              id="btnRefreshPublishedScreen"
+              type="button"
+              class="miniBtn"
+            >
+              Refresh
+            </button>
+            <div id="pubUpdated" class="pill">Updated: —</div>
+          </div>
+          <button id="btnClosePublished" type="button">Close</button>
+        </div>
+        <div class="body">
+          <div class="list" id="pubList"></div>
+          <div class="detail">
+            <h3 id="pubDetailTitle">Select a level</h3>
+            <div class="muted" id="pubDetailMeta">
+              Choose a level on the left.
+            </div>
+            <div class="btnRow">
+              <button id="btnPlaySelectedPublished" type="button" disabled>
+                Play Selected
+              </button>
+            </div>
+            <div id="adminRatingBox" class="adminBox" style="display: none">
+              <div style="font-size: 13px; color: #bbb; margin-bottom: 6px">
+                Admin Difficulty Rating
+              </div>
+              <div class="row">
+                <select id="adminRatingSel">
+                  <option value="1">1★</option>
+                  <option value="2">2★</option>
+                  <option value="3">3★</option>
+                  <option value="4">4★</option>
+                  <option value="5">5★</option>
+                  <option value="6">6★</option>
+                  <option value="7">7★</option>
+                  <option value="8">8★</option>
+                  <option value="9">9★</option>
+                  <option value="10">10★</option>
+                </select>
+                <button id="btnAdminSaveRating" type="button">
+                  Save Rating
+                </button>
+              </div>
+              <div class="small" id="adminRatingNote">.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="menu" role="dialog" aria-modal="true">
+      <div class="panel">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+          "
+        >
+          <div>
+            <h1 style="margin-bottom: 6px">Magnet Platformer</h1>
+            <p style="margin-top: 0">Select a mode.</p>
+            <div class="row" style="margin-top: 6px">
+              <button id="btnOpenAuth" type="button" class="miniBtn">
+                Account
+              </button>
+              <div id="userPill" class="pill">User: Guest</div>
+            </div>
+          </div>
+          <div id="netPill" class="pill">Status: …</div>
+        </div>
+        <div class="grid">
+          <div class="card">
+            <div style="font-size: 13px; color: #bbb; margin-bottom: 8px">
+              Campaign
+            </div>
+            <div class="row">
+              <button id="btnPlayCampaign" type="button">Play Campaign</button>
+              <select id="campaignStart"></select>
+            </div>
+            <div class="box">
+              <div class="hdr">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <div>Top 10 Campaign Times</div>
+                  <button
+                    id="btnRefreshLeaderboard"
+                    class="miniBtn"
+                    type="button"
+                  >
+                    Refresh
+                  </button>
+                </div>
+                <div id="lbUpdated">Updated: —</div>
+              </div>
+              <div id="leaderboard"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div style="font-size: 13px; color: #bbb; margin-bottom: 8px">
+              Custom Levels
+            </div>
+            <div class="row">
+              <button id="btnPlayCustom" type="button">Play Custom</button>
+              <select id="customSelect"></select>
+            </div>
+            <div class="row" style="margin-top: 10px">
+              <button id="btnBrowsePublished" type="button">
+                Browse Published
+              </button>
+            </div>
+            <div class="row" style="margin-top: 10px">
+              <button id="btnOpenEditor" type="button">Level Editor</button>
+            </div>
+            <div class="box">
+              <div class="hdr">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <div>Top 10 Stars</div>
+                  <button id="btnRefreshStars" class="miniBtn" type="button">
+                    Refresh
+                  </button>
+                </div>
+                <div id="starsUpdated">Updated: —</div>
+              </div>
+              <div id="starsLeaderboard"></div>
+            </div>
+          </div>
+        </div>
+        <div class="meta">
+        
+          <div class="row">
+          <a href="https://discord.gg/YTAnvW94b" target="_blank" rel="noopener noreferrer"> <button class="socialbutton"><img src="https://images.icon-icons.com/2108/PNG/512/discord_icon_130958.png" width="50" height="50" alt="Magnet Platformer Official Discord" title="Join the Discord!"></button></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="editor">
+      <div id="editorDock">
+        <div class="panel">
+          <h2>Custom Level Editor</h2>
+          <label>Custom level</label>
+          <select id="edCustomSelect"></select>
+          <div class="btnRow" style="margin-top: 8px">
+            <button id="edNew" type="button">New</button>
+            <button id="edDuplicate" type="button">Duplicate</button>
+          </div>
+          <div class="btnRow" style="margin-top: 8px">
+            <button id="edDelete" type="button">Delete</button>
+            <button id="edBack" type="button">Back to Menu</button>
+          </div>
+          <label>Username (published levels)</label>
+          <input id="edUsername" type="text" />
+          <label>Tool (hotkeys 1–9)</label>
+          <select id="edTool">
+            <option value="select">Select / Drag</option>
+            <option value="solid">Solid</option>
+            <option value="spike">Spike</option>
+            <option value="pole">Pole</option>
+            <option value="finish">Finish</option>
+            <option value="spawn">Spawn</option>
+            <option value="erase">Eraser</option>
+            <option value="portalShip">Portal → Ship</option>
+            <option value="portalCube">Portal → Cube</option>
+          </select>
+          <div class="smallRow">
+            <div>
+              <label>Width</label
+              ><input id="edW" type="number" min="1" step="1" value="160" />
+            </div>
+            <div>
+              <label>Height</label
+              ><input id="edH" type="number" min="1" step="1" value="20" />
+            </div>
+          </div>
+          <label>Pole color</label>
+          <select id="edPoleColor">
+            <option value="blue">Blue</option>
+            <option value="red">Red</option>
+          </select>
+          <label>Pole power</label>
+          <input id="edPolePower" type="number" step="0.1" value="1.0" />
+          <label>Export / Import (JSON)</label>
+          <textarea id="edJson" rows="8" spellcheck="false"></textarea>
+          <div class="btnRow" style="margin-top: 8px">
+            <button id="edExport" type="button">Export</button>
+            <button id="edImport" type="button">Import</button>
+          </div>
+          <div class="btnRow" style="margin-top: 8px">
+            <button id="edTest" type="button">Test</button>
+            <button id="edSave" type="button">Save</button>
+          </div>
+          <div class="btnRow" style="margin-top: 8px">
+            <button id="edPublish" type="button">Publish</button>
+            <button id="edPublishInfo" type="button">Rules</button>
+          </div>
+          <div class="req">
+            Non-admins must beat a draft before publishing. Admins can publish
+            anytime.
+          </div>
+        </div>
+        <button id="edDockToggle" type="button">❮</button>
+      </div>
+    </div>
+
+    <div id="palette">
+      <div class="title">Editor Palette</div>
+      <div class="line">
+        <span class="hot">1</span> Select · <span class="hot">2</span> Solid ·
+        <span class="hot">3</span> Spike · <span class="hot">4</span> Pole
+      </div>
+      <div class="line">
+        <span class="hot">5</span> Finish · <span class="hot">6</span> Spawn ·
+        <span class="hot">7</span> Erase ·
+        <span class="hot">8</span> Portal→Ship ·
+        <span class="hot">9</span> Portal→Cube
+      </div>
+    </div>
+
+    <div id="wrap"><canvas id="c" width="960" height="540"></canvas></div>
+
+    <script>
+      (() => {
+        const fatalEl = document.getElementById("fatal");
+        const fatalMsg = document.getElementById("fatalMsg");
+        function showFatal(err) {
+          fatalMsg.textContent = String(err && err.stack ? err.stack : err);
+          fatalEl.style.display = "flex";
+        }
+        window.addEventListener("error", (e) =>
+          showFatal(e.error || e.message || "Error"),
+        );
+        window.addEventListener("unhandledrejection", (e) =>
+          showFatal(e.reason || "Unhandled promise rejection"),
+        );
+
+        const RTDB_BASE =
+          "https://magnetplatformer-default-rtdb.firebaseio.com";
+        let firebaseOk = false;
+        let fb = null;
+
+        function makeRestFB(base) {
+          const mkUrl = (path) =>
+            `${base}/${String(path).replace(/^\/+/, "")}.json`;
+          class Snap {
+            constructor(key, data) {
+              this.key = key;
+              this._data = data;
+            }
+            exists() {
+              return this._data !== null && this._data !== undefined;
+            }
+            val() {
+              return this._data;
+            }
+            forEach(cb) {
+              if (
+                !this.exists() ||
+                typeof this._data !== "object" ||
+                Array.isArray(this._data)
+              )
+                return false;
+              for (const [k, v] of Object.entries(this._data))
+                cb(new Snap(k, v));
+              return true;
+            }
+          }
+          async function getPath(path) {
+            const res = await fetch(mkUrl(path), { cache: "no-store" });
+            if (!res.ok) throw new Error(`GET ${path} ${res.status}`);
+            return new Snap(null, await res.json());
+          }
+          async function setPath(path, value) {
+            const res = await fetch(mkUrl(path), {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(value),
+            });
+            if (!res.ok) throw new Error(`PUT ${path} ${res.status}`);
+            return true;
+          }
+          async function pushPath(path, value) {
+            const res = await fetch(mkUrl(path), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(value),
+            });
+            if (!res.ok) throw new Error(`POST ${path} ${res.status}`);
+            const out = await res.json();
+            return new Snap(out && out.name ? out.name : null, value);
+          }
+          return {
+            get: getPath,
+            set: setPath,
+            push: pushPath,
+            serverTimestamp: () => Date.now(),
+          };
+        }
+
+        async function initFirebase({ timeoutMs = 1200 } = {}) {
+          if (!navigator.onLine) {
+            firebaseOk = false;
+            fb = null;
+            return false;
+          }
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), timeoutMs);
+          try {
+            const ping = await fetch(`${RTDB_BASE}/.json?shallow=true`, {
+              cache: "no-store",
+              signal: controller.signal,
+            });
+            if (!ping.ok) throw new Error("ping");
+            fb = makeRestFB(RTDB_BASE);
+            firebaseOk = true;
+            return true;
+          } catch {
+            firebaseOk = false;
+            fb = null;
+            return false;
+          } finally {
+            clearTimeout(timer);
+          }
+        }
+
+        const CACHE_KEYS = {
+          leaderboard: "magnet_platformer_campaign_leaderboard_cache_v4",
+          publishedLevels: "magnet_platformer_published_levels_cache_v10",
+          starsLeaderboard: "magnet_platformer_stars_leaderboard_cache_v3",
+          username: "magnet_platformer_username_v2",
+          editorDock: "magnet_platformer_editor_dock_open_v3",
+          session: "magnet_platformer_session_v1",
+          customLevels: "magnet_platformer_custom_levels_v3",
+        };
+
+        const loadJSON = (k, fallback) => {
+          try {
+            const raw = localStorage.getItem(k);
+            if (!raw) return fallback;
+            return JSON.parse(raw);
+          } catch {
+            return fallback;
+          }
+        };
+        const saveJSON = (k, v) => {
+          try {
+            localStorage.setItem(k, JSON.stringify(v));
+          } catch {}
+        };
+
+        let lbCache = loadJSON(CACHE_KEYS.leaderboard, {
+          fetchedAt: 0,
+          items: [],
+          lastError: "",
+        });
+        let levelsCache = loadJSON(CACHE_KEYS.publishedLevels, {
+          fetchedAt: 0,
+          items: [],
+          lastError: "",
+        });
+        let starsCache = loadJSON(CACHE_KEYS.starsLeaderboard, {
+          fetchedAt: 0,
+          items: [],
+          lastError: "",
+        });
+        const userCache = loadJSON(CACHE_KEYS.username, { v: "" });
+        let sessionCache = loadJSON(CACHE_KEYS.session, {
+          username: "",
+          loginAt: 0,
+        });
+
+        const nowMs = () => Date.now();
+        const isOnline = () => navigator.onLine === true;
+        const canWriteRemote = () => firebaseOk && isOnline();
+
+        const AUTH_PATH = "auth/users";
+        function validUsername(u) {
+          const s = String(u || "").trim();
+          return /^[A-Za-z0-9_]{3,20}$/.test(s) ? s : "";
+        }
+        function validPassword(p) {
+          const s = String(p || "");
+          return s.length >= 6 ? s : "";
+        }
+
+        const authState = { user: null };
+        function isLoggedIn() {
+          return !!authState.user;
+        }
+        function isAdmin() {
+          return !!authState.user?.isAdmin;
+        }
+        function currentUsername() {
+          return authState.user?.username || "";
+        }
+
+        function setAuthUser(username) {
+          authState.user = { username, isAdmin: username === "Jonathan" && username === "roundtoaster" };
+          sessionCache = { username, loginAt: Date.now() };
+          saveJSON(CACHE_KEYS.session, sessionCache);
+          updateAuthUI();
+          syncUsernameIntoEditor();
+          if (mode === MODE.PUBLISHED) renderPublishedBrowser();
+        }
+        function clearAuthUser() {
+          authState.user = null;
+          sessionCache = { username: "", loginAt: 0 };
+          saveJSON(CACHE_KEYS.session, sessionCache);
+          updateAuthUI();
+          syncUsernameIntoEditor();
+          if (mode === MODE.PUBLISHED) renderPublishedBrowser();
+        }
+        async function signup(username, password) {
+          if (!canWriteRemote() || !fb)
+            throw new Error("Offline or Firebase unavailable.");
+          const u = validUsername(username);
+          const p = validPassword(password);
+          if (!u) throw new Error("Invalid username.");
+          if (!p) throw new Error("Invalid password.");
+          const snap = await fb.get(`${AUTH_PATH}/${u}`);
+          if (snap.exists()) throw new Error("Username already exists.");
+          await fb.set(`${AUTH_PATH}/${u}`, {
+            username: u,
+            password: p,
+            createdAt: Date.now(),
+            isAdmin: u === "Jonathan",
+          });
+          setAuthUser(u);
+        }
+        async function login(username, password) {
+          if (!canWriteRemote() || !fb)
+            throw new Error("Offline or Firebase unavailable.");
+          const u = validUsername(username);
+          if (!u) throw new Error("Invalid username.");
+          const snap = await fb.get(`${AUTH_PATH}/${u}`);
+          if (!snap.exists()) throw new Error("User not found.");
+          const rec = snap.val() || {};
+          if (String(rec.password || "") !== String(password || ""))
+            throw new Error("Incorrect password.");
+          setAuthUser(u);
+        }
+        function tryRestoreSession() {
+          const u = validUsername(sessionCache?.username || "");
+          if (!u) return;
+          authState.user = { username: u, isAdmin: u === "Jonathan" };
+        }
+
+        const canvas = document.getElementById("c");
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width,
+          H = canvas.height;
+
+        function isTypingTarget(el) {
+          if (!el) return false;
+          const tag = (el.tagName || "").toUpperCase();
+          return (
+            tag === "INPUT" ||
+            tag === "TEXTAREA" ||
+            tag === "SELECT" ||
+            !!el.isContentEditable
+          );
+        }
+
+        const keys = new Map();
+        window.addEventListener(
+          "keydown",
+          (e) => {
+            if (isTypingTarget(e.target)) return;
+            if (
+              [
+                "ArrowLeft",
+                "ArrowRight",
+                "ArrowUp",
+                "ArrowDown",
+                "Space",
+                "KeyR",
+                "KeyO",
+                "Escape",
+                "Backspace",
+                "Delete",
+                "Digit1",
+                "Digit2",
+                "Digit3",
+                "Digit4",
+                "Digit5",
+                "Digit6",
+                "Digit7",
+                "Digit8",
+                "Digit9",
+              ].includes(e.code)
+            )
+              e.preventDefault();
+            keys.set(e.code, true);
+          },
+          { passive: false },
+        );
+        window.addEventListener("keyup", (e) => keys.set(e.code, false));
+        const pressed = (code) => keys.get(code) === true;
+
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const sign = (v) => (v < 0 ? -1 : v > 0 ? 1 : 0);
+        const dist2 = (ax, ay, bx, by) => {
+          const dx = ax - bx,
+            dy = ay - by;
+          return dx * dx + dy * dy;
+        };
+        const esc = (s) =>
+          String(s).replace(
+            /[&<>"]/g,
+            (c) =>
+              ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
+          );
+        const aabb = (a, b) =>
+          a.x < b.x + b.w &&
+          a.x + a.w > b.x &&
+          a.y < b.y + b.h &&
+          a.y + a.h > b.y;
+
+        function rect(x, y, w, h) {
+          return { x, y, w, h };
+        }
+        function spike(x, y, w, h) {
+          return { x, y, w, h, type: "spike" };
+        }
+        function pole(x, y, color, power = 1.0, r = 16) {
+          return { x, y, color, power, r, type: "pole" };
+        }
+        function flag(x, y) {
+          return { x, y, w: 40, h: 60, type: "flag" };
+        }
+        function portal(x, y, w, h, to) {
+          return {
+            x,
+            y,
+            w,
+            h,
+            type: "portal",
+            to: to === "ship" ? "ship" : "cube",
+          };
+        }
+
+        function rectPoly(r) {
+          return [
+            { x: r.x, y: r.y },
+            { x: r.x + r.w, y: r.y },
+            { x: r.x + r.w, y: r.y + r.h },
+            { x: r.x, y: r.y + r.h },
+          ];
+        }
+        function proj(poly, ax, ay) {
+          let mn = Infinity,
+            mx = -Infinity;
+          for (const p of poly) {
+            const v = p.x * ax + p.y * ay;
+            if (v < mn) mn = v;
+            if (v > mx) mx = v;
+          }
+          return { mn, mx };
+        }
+        function satOverlap(a, b) {
+          for (let i = 0; i < a.length; i++) {
+            const p1 = a[i],
+              p2 = a[(i + 1) % a.length];
+            const ex = p2.x - p1.x,
+              ey = p2.y - p1.y;
+            const ax = -ey,
+              ay = ex;
+            const pa = proj(a, ax, ay),
+              pb = proj(b, ax, ay);
+            if (pa.mx < pb.mn || pb.mx < pa.mn) return false;
+          }
+          return true;
+        }
+        function polyIntersect(a, b) {
+          return satOverlap(a, b) && satOverlap(b, a);
+        }
+
+        const FORM = { CUBE: "cube", SHIP: "ship" };
+        const player = {
+          x: 50,
+          y: 50,
+          w: 22,
+          h: 22,
+          vx: 0,
+          vy: 0,
+          onGround: false,
+          polarity: "blue",
+          switchCooldown: 0,
+          deadTimer: 0,
+          form: FORM.CUBE,
+          portalCooldown: 0,
+        };
+
+        function shipTri() {
+          const x = player.x,
+            y = player.y;
+          return [
+            { x: x, y: y },
+            { x: x + 22, y: y + 11 },
+            { x: x, y: y + 22 },
+          ];
+        }
+        function shipHitsRect(r) {
+          return polyIntersect(shipTri(), rectPoly(r));
+        }
+
+        const MAGNET_FUN_FACTS = [
+          "Did you know magnets were discovered by a Greek shepherd named Magnes, but people in China were using magnets in compasses around the same time?",
+          "Did you know the Earth acts like a giant magnet, which helps many animals navigate during migration?",
+          "Did you know magnets are used in MRI machines and in data storage devices?",
+          "Did you know magnets can help repel sharks (some magnets may deter certain shark species)?",
+          "Did you know the Sun has a magnetic field and it switches polarity roughly every 11 years?",
+          "Did you know heating a magnet can make it lose strength?",
+          "Did you know the original name for magnets was lodestone, a naturally magnetic rock?",
+          "Did you know magnetic fields can affect electricity only when the magnetic field is changing, not when it is static?",
+          "Did you know magnets can corrupt electronic devices, data storage, and even credit cards?",
+          "Did you know strong magnetic fields near your head can affect your autonomic nervous system and cause nausea, loss of balance, or a metallic taste, and can also create visual effects called magnetophosphenes?",
+        ];
+
+        const campaignLevels = [
+          {
+            name: "Basic",
+            spawn: { x: 70, y: 420 },
+            solids: [
+              rect(0, 500, 960, 40),
+              rect(240, 420, 160, 20),
+              rect(500, 360, 160, 20),
+              rect(740, 300, 160, 20),
+            ],
+            spikes: [spike(420, 482, 120, 18)],
+            poles: [pole(320, 390, "blue", 1.0), pole(580, 330, "red", 1.0)],
+            portals: [],
+            finish: flag(900, 440),
+          },
+          {
+            name: "Fling practice",
+            spawn: { x: 70, y: 420 },
+            solids: [
+              rect(0, 500, 960, 40),
+              rect(120, 420, 220, 20),
+              rect(420, 420, 220, 20),
+              rect(740, 260, 180, 20),
+            ],
+            spikes: [spike(640, 482, 140, 18)],
+            poles: [
+              pole(240, 392, "blue", 1.1),
+              pole(500, 392, "red", 1.1),
+              pole(650, 460, "red", 2.8),
+            ],
+            portals: [],
+            finish: flag(880, 210),
+          },
+          {
+            name: "Chain (no vertical fling)",
+            spawn: { x: 70, y: 420 },
+            solids: [
+              rect(0, 500, 960, 40),
+              rect(120, 420, 220, 20),
+              rect(390, 380, 220, 20),
+              rect(660, 340, 220, 20),
+              rect(820, 300, 120, 20),
+            ],
+            spikes: [spike(340, 482, 120, 18), spike(560, 482, 120, 18)],
+            poles: [
+              pole(310, 400, "red", 1.6),
+              pole(520, 360, "blue", 1.6),
+              pole(760, 320, "red", 1.8),
+            ],
+            portals: [],
+            finish: flag(900, 240),
+          },
+          {
+            name: "Ceiling catch",
+            spawn: { x: 70, y: 420 },
+            solids: [
+              rect(0, 500, 960, 40),
+              rect(0, 60, 960, 20),
+              rect(220, 420, 180, 20),
+              rect(520, 360, 200, 20),
+              rect(780, 280, 160, 20),
+            ],
+            spikes: [spike(420, 482, 240, 18)],
+            poles: [
+              pole(420, 90, "red", 1.4),
+              pole(660, 90, "blue", 1.4),
+              pole(600, 330, "red", 1.0),
+            ],
+            portals: [],
+            finish: flag(900, 220),
+          },
+          {
+            name: "Spike timing",
+            spawn: { x: 60, y: 420 },
+            solids: [
+              rect(0, 500, 960, 40),
+              rect(80, 320, 200, 20),
+              rect(360, 360, 200, 20),
+              rect(660, 320, 240, 20),
+              rect(0, 110, 960, 16),
+              rect(40, 180, 120, 14),
+            ],
+            spikes: [
+              spike(280, 482, 120, 18),
+              spike(460, 482, 120, 18),
+              spike(640, 482, 120, 18),
+            ],
+            poles: [
+              pole(180, 292, "blue", 1.3),
+              pole(460, 332, "red", 1.3),
+              pole(760, 292, "blue", 1.3),
+              pole(120, 240, "red", 2.4),
+              pole(240, 200, "blue", 2.0),
+              pole(200, 95, "red", 1.6),
+              pole(360, 95, "blue", 1.6),
+              pole(520, 95, "red", 1.6),
+              pole(680, 95, "blue", 1.6),
+              pole(840, 95, "red", 1.6),
+            ],
+            portals: [],
+            finish: flag(900, 260),
+          },
+          {
+            name: "Tunnel",
+            spawn: { x: 140, y: 398 },
+            solids: [
+              rect(0, 500, 960, 40),
+              rect(0, 80, 360, 20),
+              rect(520, 80, 440, 20),
+              rect(0, 80, 20, 460),
+              rect(940, 80, 20, 460),
+              rect(120, 420, 720, 20),
+              rect(120, 220, 360, 20),
+              rect(520, 220, 720, 20),
+              rect(320, 360, 120, 14),
+              rect(560, 300, 120, 14),
+            ],
+            spikes: [
+              spike(20, 482, 220, 18),
+              spike(300, 482, 260, 18),
+              spike(620, 482, 320, 18),
+            ],
+            poles: [
+              pole(220, 200, "red", 1.25),
+              pole(320, 408, "blue", 1.25),
+              pole(440, 200, "blue", 1.25),
+              pole(520, 408, "red", 1.25),
+              pole(660, 200, "red", 1.25),
+              pole(740, 408, "blue", 1.25),
+            ],
+            portals: [],
+            finish: flag(880, 160),
+          },
+          {
+            name: "Big fling",
+            spawn: { x: 70, y: 420 },
+            solids: [
+              rect(0, 500, 960, 40),
+              rect(120, 420, 220, 20),
+              rect(420, 380, 220, 20),
+            ],
+            spikes: [spike(320, 482, 220, 18), spike(620, 482, 220, 18)],
+            poles: [
+              pole(220, 392, "red", 1.0),
+              pole(520, 352, "blue", 1.0),
+              pole(560, 460, "blue", 3.1),
+              pole(820, 312, "red", 1.0),
+            ],
+            portals: [],
+            finish: flag(800, 100),
+          },
+          {
+            name: "Fling + ceiling",
+            spawn: { x: 60, y: 420 },
+            solids: [
+              rect(0, 500, 960, 40),
+              rect(0, 60, 960, 20),
+              rect(120, 420, 220, 20),
+              rect(420, 300, 220, 20),
+              rect(740, 240, 200, 20),
+              rect(520, 170, 180, 20),
+            ],
+            spikes: [spike(360, 482, 240, 18)],
+            poles: [
+              pole(360, 460, "red", 2.7),
+              pole(520, 90, "red", 1.5),
+              pole(760, 90, "blue", 1.5),
+            ],
+            portals: [],
+            finish: flag(900, 180),
+          },
+          {
+            name: "Precision",
+            spawn: { x: 60, y: 420 },
+            solids: [
+              rect(0, 500, 960, 40),
+              rect(150, 440, 90, 20),
+              rect(300, 390, 90, 20),
+              rect(450, 340, 90, 20),
+              rect(600, 290, 90, 20),
+              rect(750, 240, 90, 20),
+              rect(860, 190, 90, 20),
+            ],
+            spikes: [
+              spike(240, 482, 60, 18),
+              spike(390, 482, 60, 18),
+              spike(540, 482, 60, 18),
+              spike(690, 482, 60, 18),
+              spike(840, 482, 60, 18),
+            ],
+            poles: [
+              pole(195, 412, "blue", 1.25),
+              pole(345, 362, "red", 1.25),
+              pole(495, 312, "blue", 1.25),
+              pole(645, 262, "red", 1.25),
+              pole(795, 212, "blue", 1.25),
+            ],
+            portals: [],
+            finish: flag(900, 130),
+          },
+          {
+            name: "Final chain",
+            spawn: { x: 60, y: 420 },
+            solids: [
+              rect(0, 500, 960, 40),
+              rect(0, 60, 960, 20),
+              rect(120, 420, 200, 20),
+              rect(420, 360, 220, 20),
+              rect(720, 300, 220, 20),
+              rect(520, 180, 220, 20),
+            ],
+            spikes: [
+              spike(320, 482, 180, 18),
+              spike(560, 482, 180, 18),
+              spike(780, 482, 160, 18),
+            ],
+            poles: [
+              pole(360, 460, "blue", 2.8),
+              pole(660, 330, "red", 3.0),
+              pole(220, 392, "blue", 1.0),
+              pole(530, 332, "red", 1.0),
+              pole(820, 272, "blue", 1.0),
+              pole(620, 90, "red", 1.4),
+            ],
+            portals: [],
+            finish: flag(900, 240),
+          },
+          {
+            name: "Bonus",
+            spawn: { x: 70, y: 420 },
+            solids: [rect(0, 500, 1055, 69), rect(403, 177, 167, 333)],
+            spikes: [spike(571, 446, 119, 54), spike(301, 446, 119, 20)],
+            poles: [
+              pole(361, 329, "blue", 2),
+              pole(617, 476, "red", 3),
+              pole(361, 385, "red", 2),
+              pole(361, 438, "blue", 2),
+              pole(361, 214, "blue", 2),
+              pole(361, 267, "red", 2),
+              pole(661, 476, "red", 3),
+            ],
+            portals: [],
+            finish: flag(900, 440),
+          },
+        ];
+
+        function defaultCustomLevel() {
+          return {
+            id:
+              Math.random().toString(16).slice(2) +
+              Math.random().toString(16).slice(2),
+            name: "Custom Level 1",
+            spawn: { x: 70, y: 420 },
+            solids: [{ x: 0, y: 500, w: 960, h: 40 }],
+            spikes: [],
+            poles: [],
+            portals: [],
+            finish: { x: 900, y: 440, w: 40, h: 60, type: "flag" },
+          };
+        }
+
+        function sanitizeLevel(obj) {
+          const L = {
+            id: String(
+              obj.id ||
+                Math.random().toString(16).slice(2) +
+                  Math.random().toString(16).slice(2),
+            ),
+            name: String(obj.name || "Custom Level"),
+            spawn: {
+              x: clamp(+obj.spawn?.x || 60, 0, W - 1),
+              y: clamp(+obj.spawn?.y || 420, 0, H - 1),
+            },
+            solids: Array.isArray(obj.solids)
+              ? obj.solids.map((s) => ({
+                  x: +s.x || 0,
+                  y: +s.y || 0,
+                  w: Math.max(1, +s.w || 10),
+                  h: Math.max(1, +s.h || 10),
+                }))
+              : [],
+            spikes: Array.isArray(obj.spikes)
+              ? obj.spikes.map((s) => ({
+                  x: +s.x || 0,
+                  y: +s.y || 0,
+                  w: Math.max(1, +s.w || 10),
+                  h: Math.max(1, +s.h || 10),
+                  type: "spike",
+                }))
+              : [],
+            poles: Array.isArray(obj.poles)
+              ? obj.poles.map((p) => ({
+                  x: +p.x || 0,
+                  y: +p.y || 0,
+                  color: p.color === "red" ? "red" : "blue",
+                  power: +p.power || 1.0,
+                  r: Math.max(6, +p.r || 16),
+                  type: "pole",
+                }))
+              : [],
+            portals: Array.isArray(obj.portals)
+              ? obj.portals.map((t) => ({
+                  x: +t.x || 0,
+                  y: +t.y || 0,
+                  w: Math.max(4, +t.w || 26),
+                  h: Math.max(4, +t.h || 40),
+                  type: "portal",
+                  to: t.to === "ship" ? "ship" : "cube",
+                }))
+              : [],
+            finish: {
+              x: +obj.finish?.x || 900,
+              y: +obj.finish?.y || 440,
+              w: Math.max(4, +obj.finish?.w || 40),
+              h: Math.max(4, +obj.finish?.h || 60),
+              type: "flag",
+            },
+          };
+          if (L.solids.length === 0)
+            L.solids.push({ x: 0, y: 500, w: 960, h: 40 });
+          return L;
+        }
+
+        let customLevels = loadJSON(CACHE_KEYS.customLevels, [
+          defaultCustomLevel(),
+        ]).map(sanitizeLevel);
+        function saveCustomLevels() {
+          saveJSON(CACHE_KEYS.customLevels, customLevels);
+        }
+
+        function stableDraftToken(levelObj) {
+          const o = {
+            spawn: levelObj.spawn,
+            solids: levelObj.solids,
+            spikes: levelObj.spikes.map((s) => ({
+              x: s.x,
+              y: s.y,
+              w: s.w,
+              h: s.h,
+            })),
+            poles: levelObj.poles.map((p) => ({
+              x: p.x,
+              y: p.y,
+              color: p.color,
+              power: p.power,
+              r: p.r ?? 16,
+            })),
+            portals: (levelObj.portals || []).map((t) => ({
+              x: t.x,
+              y: t.y,
+              w: t.w,
+              h: t.h,
+              to: t.to,
+            })),
+            finish: {
+              x: levelObj.finish.x,
+              y: levelObj.finish.y,
+              w: levelObj.finish.w,
+              h: levelObj.finish.h,
+            },
+          };
+          const s = JSON.stringify(o);
+          let h = 2166136261;
+          for (let i = 0; i < s.length; i++) {
+            h ^= s.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+          }
+          return `v2_${(h >>> 0).toString(16)}_${s.length}`;
+        }
+
+        let editorLevelId = customLevels[0]?.id || null;
+        let editorDraft = sanitizeLevel(
+          customLevels[0] || defaultCustomLevel(),
+        );
+        let editorDraftToken = stableDraftToken(editorDraft);
+        let beatenDraftToken = "";
+        function markDraftDirty() {
+          editorDraftToken = stableDraftToken(editorDraft);
+          if (beatenDraftToken && beatenDraftToken !== editorDraftToken)
+            beatenDraftToken = "";
+          updateEditorPublishEnabled();
+        }
+        function isDraftBeaten() {
+          return beatenDraftToken && beatenDraftToken === editorDraftToken;
+        }
+
+        let publishedLevels = Array.isArray(levelsCache.items)
+          ? levelsCache.items
+          : [];
+        let selectedPublishedId = "";
+        function publishedById(id) {
+          return publishedLevels.find((x) => x && x.id === id) || null;
+        }
+
+        function difficultyFromItem(it) {
+          const avg = Number(it?.difficulty?.avg);
+          if (Number.isFinite(avg) && avg > 0) return avg;
+          return 0;
+        }
+        function difficultyLabel(it) {
+          const avg = difficultyFromItem(it);
+          const cnt = Number(it?.difficulty?.count) || 0;
+          if (avg <= 0) return "—";
+          const a = avg.toFixed(1);
+          return cnt > 0 ? `${a}★ (${cnt})` : `${a}★`;
+        }
+
+        const hudEl = document.getElementById("hud");
+        const winEl = document.getElementById("win");
+        const winTimeEl = document.getElementById("winTime");
+        const playAgainBtn = document.getElementById("playAgain");
+        const submitTimeBtn = document.getElementById("submitTime");
+        const winNoteEl = document.getElementById("winNote");
+
+        const menuEl = document.getElementById("menu");
+        const btnPlayCampaign = document.getElementById("btnPlayCampaign");
+        const btnPlayCustom = document.getElementById("btnPlayCustom");
+        const btnOpenEditor = document.getElementById("btnOpenEditor");
+        const btnBrowsePublished =
+          document.getElementById("btnBrowsePublished");
+        const btnRefreshLeaderboard = document.getElementById(
+          "btnRefreshLeaderboard",
+        );
+        const campaignStartSel = document.getElementById("campaignStart");
+        const customSelectSel = document.getElementById("customSelect");
+        const leaderboardEl = document.getElementById("leaderboard");
+        const lbUpdatedEl = document.getElementById("lbUpdated");
+        const netPillEl = document.getElementById("netPill");
+        const userPillEl = document.getElementById("userPill");
+        const btnOpenAuth = document.getElementById("btnOpenAuth");
+
+        const starsLeaderboardEl = document.getElementById("starsLeaderboard");
+        const btnRefreshStars = document.getElementById("btnRefreshStars");
+        const starsUpdatedEl = document.getElementById("starsUpdated");
+
+        const editorEl = document.getElementById("editor");
+        const editorDock = document.getElementById("editorDock");
+        const edDockToggle = document.getElementById("edDockToggle");
+        const paletteEl = document.getElementById("palette");
+
+        const edCustomSelect = document.getElementById("edCustomSelect");
+        const edNew = document.getElementById("edNew");
+        const edDuplicate = document.getElementById("edDuplicate");
+        const edDelete = document.getElementById("edDelete");
+        const edBack = document.getElementById("edBack");
+        const edUsername = document.getElementById("edUsername");
+        const edTool = document.getElementById("edTool");
+        const edW = document.getElementById("edW");
+        const edH = document.getElementById("edH");
+        const edPoleColor = document.getElementById("edPoleColor");
+        const edPolePower = document.getElementById("edPolePower");
+        const edJson = document.getElementById("edJson");
+        const edExport = document.getElementById("edExport");
+        const edImport = document.getElementById("edImport");
+        const edTest = document.getElementById("edTest");
+        const edSave = document.getElementById("edSave");
+        const edPublish = document.getElementById("edPublish");
+        const edPublishInfo = document.getElementById("edPublishInfo");
+
+        const publishedBrowserEl = document.getElementById("publishedBrowser");
+        const pubSearchEl = document.getElementById("pubSearch");
+        const btnRefreshPublishedScreen = document.getElementById(
+          "btnRefreshPublishedScreen",
+        );
+        const btnClosePublished = document.getElementById("btnClosePublished");
+        const pubListEl = document.getElementById("pubList");
+        const pubUpdatedEl = document.getElementById("pubUpdated");
+        const pubDetailTitleEl = document.getElementById("pubDetailTitle");
+        const pubDetailMetaEl = document.getElementById("pubDetailMeta");
+        const btnPlaySelectedPublished = document.getElementById(
+          "btnPlaySelectedPublished",
+        );
+        const adminRatingBoxEl = document.getElementById("adminRatingBox");
+        const adminRatingSelEl = document.getElementById("adminRatingSel");
+        const btnAdminSaveRating =
+          document.getElementById("btnAdminSaveRating");
+        const adminRatingNoteEl = document.getElementById("adminRatingNote");
+
+        const authModalEl = document.getElementById("authModal");
+        const btnCloseAuth = document.getElementById("btnCloseAuth");
+        const authUsernameEl = document.getElementById("authUsername");
+        const authPasswordEl = document.getElementById("authPassword");
+        const btnSignup = document.getElementById("btnSignup");
+        const btnLogin = document.getElementById("btnLogin");
+        const btnLogout = document.getElementById("btnLogout");
+        const authStatusEl = document.getElementById("authStatus");
+
+        const MODE = {
+          MENU: "menu",
+          PLAY: "play",
+          EDITOR: "editor",
+          PUBLISHED: "published",
+          AUTH: "auth",
+        };
+        let mode = MODE.MENU;
+
+        const PLAYMODE = { CAMPAIGN: "campaign", CUSTOM: "custom" };
+        let playMode = PLAYMODE.CAMPAIGN;
+
+        let campaignIndex = 0;
+        let campaignStartIndex = 0;
+
+        let customPlayId = null;
+        let customPlayLevel = null;
+        let customPlaySource = "saved";
+        let customDraftForPlay = null;
+
+        let hasWon = false;
+        let runStartMs = performance.now();
+        let runElapsedMs = 0;
+        let submittedThisRun = false;
+        let skippedAny = false;
+        let starsAwardedThisWin = false;
+
+        function fmtUpdated(ts) {
+          if (!ts) return "—";
+          return new Date(ts).toLocaleString();
+        }
+        function formatTime(ms) {
+          const totalSec = Math.max(0, ms) / 1000;
+          const m = Math.floor(totalSec / 60);
+          const s = totalSec - m * 60;
+          return `${m}:${s.toFixed(2).padStart(5, "0")}`;
+        }
+
+        let editorDockOpen =
+          localStorage.getItem(CACHE_KEYS.editorDock) !== "0";
+        function applyEditorDock() {
+          editorDock.classList.toggle("closed", !editorDockOpen);
+          edDockToggle.textContent = editorDockOpen ? "❮" : "❯";
+        }
+        edDockToggle.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          editorDockOpen = !editorDockOpen;
+          localStorage.setItem(
+            CACHE_KEYS.editorDock,
+            editorDockOpen ? "1" : "0",
+          );
+          applyEditorDock();
+        });
+        applyEditorDock();
+
+        function setMode(next) {
+          mode = next;
+          menuEl.style.display = mode === MODE.MENU ? "flex" : "none";
+          editorEl.style.display = mode === MODE.EDITOR ? "block" : "none";
+          paletteEl.style.display = mode === MODE.EDITOR ? "block" : "none";
+          publishedBrowserEl.style.display =
+            mode === MODE.PUBLISHED ? "flex" : "none";
+          authModalEl.style.display = mode === MODE.AUTH ? "flex" : "none";
+          if (mode === MODE.EDITOR) applyEditorDock();
+          if (mode !== MODE.PLAY) hideWin();
+          if (mode !== MODE.PUBLISHED) selectedPublishedId = "";
+        }
+
+        function updateNetPill() {
+          const status = firebaseOk
+            ? isOnline()
+              ? "Online"
+              : "Offline"
+            : isOnline()
+              ? "No Firebase"
+              : "Offline";
+          netPillEl.textContent = `Status: ${status}`;
+          netPillEl.className =
+            "pill" + (isOnline() && firebaseOk ? "" : " offline");
+        }
+
+        function updateUserPill() {
+          userPillEl.textContent = isLoggedIn()
+            ? `User: ${currentUsername()}${isAdmin() ? " (Admin)" : ""}`
+            : "User: Guest";
+        }
+
+        function updateAuthUI(msg = "", isErr = false) {
+          updateUserPill();
+          btnLogout.disabled = !isLoggedIn();
+          authStatusEl.className = isErr ? "status err" : "status";
+          authStatusEl.textContent = isLoggedIn()
+            ? `Logged in as ${currentUsername()}${isAdmin() ? " (Admin)" : ""}.${msg ? ` ${msg}` : ""}`
+            : msg
+              ? msg
+              : "Not logged in.";
+          updateEditorPublishEnabled();
+          if (mode === MODE.PUBLISHED) renderPublishedBrowser();
+        }
+
+        function syncUsernameIntoEditor() {
+          if (isLoggedIn()) {
+            edUsername.value = currentUsername();
+            edUsername.disabled = true;
+          } else {
+            edUsername.disabled = false;
+            if (
+              userCache &&
+              typeof userCache.v === "string" &&
+              !edUsername.value
+            )
+              edUsername.value = userCache.v;
+          }
+          updateEditorPublishEnabled();
+        }
+
+        function updateEditorPublishEnabled() {
+          const ok =
+            canWriteRemote() && isLoggedIn() && (isDraftBeaten() || isAdmin());
+          edPublish.disabled = !ok;
+        }
+
+        function refreshCampaignStart() {
+          campaignStartSel.innerHTML = "";
+          campaignLevels.forEach((L, i) => {
+            const opt = document.createElement("option");
+            opt.value = String(i);
+            opt.textContent = `Level ${i + 1}`;
+            campaignStartSel.appendChild(opt);
+          });
+          campaignStartSel.value = String(campaignStartIndex);
+        }
+
+        function refreshCustomSelects() {
+          customSelectSel.innerHTML = "";
+          customLevels.forEach((L) => {
+            const opt = document.createElement("option");
+            opt.value = L.id;
+            opt.textContent = L.name;
+            customSelectSel.appendChild(opt);
+          });
+          if (customPlayId && customLevels.some((x) => x.id === customPlayId))
+            customSelectSel.value = customPlayId;
+          else customSelectSel.value = customLevels[0]?.id || "";
+
+          edCustomSelect.innerHTML = "";
+          customLevels.forEach((L) => {
+            const opt = document.createElement("option");
+            opt.value = L.id;
+            opt.textContent = L.name;
+            edCustomSelect.appendChild(opt);
+          });
+          edCustomSelect.value = editorLevelId || customLevels[0]?.id || "";
+        }
+
+        function renderLeaderboard(items, errMsg) {
+          lbUpdatedEl.textContent = `Updated: ${fmtUpdated(lbCache.fetchedAt || 0)}`;
+          if (errMsg) {
+            leaderboardEl.innerHTML = `<div class="err">${esc(errMsg)}</div>`;
+            return;
+          }
+          if (!items || items.length === 0) {
+            leaderboardEl.innerHTML = `<div class="empty">No times yet.</div>`;
+            return;
+          }
+          const rows = items
+            .slice(0, 10)
+            .map((it, idx) => {
+              const who =
+                it.name && String(it.name).trim()
+                  ? String(it.name).trim()
+                  : "Anonymous";
+              return `<tr><td>${idx + 1}</td><td>${esc(who)}</td><td>${esc(formatTime(it.timeMs))}</td></tr>`;
+            })
+            .join("");
+          leaderboardEl.innerHTML = `<table><thead><tr><th>#</th><th>Name</th><th>Time</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+
+        async function refreshLeaderboard(force = false) {
+          renderLeaderboard(lbCache.items || [], lbCache.lastError || "");
+          if (!firebaseOk || !isOnline()) return;
+          if (
+            !force &&
+            lbCache.fetchedAt &&
+            nowMs() - lbCache.fetchedAt < 55000
+          )
+            return;
+          try {
+            const snap = await fb.get("leaderboards/campaign/runs");
+            const out = [];
+            if (snap.exists()) {
+              snap.forEach((child) => {
+                const v = child.val() || {};
+                const t = Number(v.timeMs);
+                if (Number.isFinite(t) && t > 0)
+                  out.push({ name: v.name || "Anonymous", timeMs: t });
+              });
+            }
+            out.sort((a, b) => a.timeMs - b.timeMs);
+            const top = out.slice(0, 10);
+            lbCache = { fetchedAt: nowMs(), items: top, lastError: "" };
+            saveJSON(CACHE_KEYS.leaderboard, lbCache);
+            renderLeaderboard(top, "");
+          } catch {
+            lbCache.lastError = "Failed to load leaderboard.";
+            saveJSON(CACHE_KEYS.leaderboard, lbCache);
+            renderLeaderboard(lbCache.items || [], lbCache.lastError);
+          }
+        }
+
+        function renderStarsLeaderboard(items, errMsg) {
+          starsUpdatedEl.textContent = `Updated: ${fmtUpdated(starsCache.fetchedAt || 0)}`;
+          if (errMsg) {
+            starsLeaderboardEl.innerHTML = `<div class="err">${esc(errMsg)}</div>`;
+            return;
+          }
+          if (!items || items.length === 0) {
+            starsLeaderboardEl.innerHTML = `<div class="empty">No stars yet.</div>`;
+            return;
+          }
+          const rows = items
+            .slice(0, 10)
+            .map((it, idx) => {
+              const who =
+                it.username && String(it.username).trim()
+                  ? String(it.username).trim()
+                  : "Unknown";
+              const stars = Number(it.totalStars) || 0;
+              return `<tr><td>${idx + 1}</td><td>${esc(who)}</td><td>${esc(String(stars))}★</td></tr>`;
+            })
+            .join("");
+          starsLeaderboardEl.innerHTML = `<table><thead><tr><th>#</th><th>User</th><th>Stars</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+
+        async function refreshStarsLeaderboard(force = false) {
+          renderStarsLeaderboard(
+            starsCache.items || [],
+            starsCache.lastError || "",
+          );
+          if (!firebaseOk || !isOnline()) return;
+          if (
+            !force &&
+            starsCache.fetchedAt &&
+            nowMs() - starsCache.fetchedAt < 55000
+          )
+            return;
+          try {
+            const snap = await fb.get("stars/users");
+            const out = [];
+            if (snap.exists()) {
+              snap.forEach((child) => {
+                const v = child.val() || {};
+                const total = Number(v.totalStars);
+                if (Number.isFinite(total))
+                  out.push({
+                    username: child.key || v.username || "Unknown",
+                    totalStars: total,
+                  });
+              });
+            }
+            out.sort((a, b) => b.totalStars - a.totalStars);
+            const top = out.slice(0, 10);
+            starsCache = { fetchedAt: nowMs(), items: top, lastError: "" };
+            saveJSON(CACHE_KEYS.starsLeaderboard, starsCache);
+            renderStarsLeaderboard(top, "");
+          } catch {
+            starsCache.lastError = "Failed to load stars leaderboard.";
+            saveJSON(CACHE_KEYS.starsLeaderboard, starsCache);
+            renderStarsLeaderboard(
+              starsCache.items || [],
+              starsCache.lastError,
+            );
+          }
+        }
+
+        function setPublishedDetail(it) {
+          pubDetailTitleEl.textContent = it.name || it.id;
+          pubDetailMetaEl.textContent = `Author: ${it.author || "Unknown"} · Difficulty: ${difficultyLabel(it)}${isOnline() && firebaseOk ? "" : " · Offline/cached mode"}`;
+          btnPlaySelectedPublished.disabled = !(it && it.level);
+          if (isAdmin()) {
+            adminRatingBoxEl.style.display = "block";
+            adminRatingNoteEl.textContent = `Logged in as admin: ${currentUsername()} · rate 1★–10★`;
+          } else {
+            adminRatingBoxEl.style.display = "none";
+          }
+        }
+
+        function renderPublishedBrowser() {
+          pubUpdatedEl.textContent = `Updated: ${fmtUpdated(levelsCache.fetchedAt || 0)}`;
+          const q = (pubSearchEl.value || "").trim().toLowerCase();
+          const items = (publishedLevels || []).filter((it) => {
+            const nm = String(it?.name || it?.id || "").toLowerCase();
+            const au = String(it?.author || "").toLowerCase();
+            return q ? nm.includes(q) || au.includes(q) : true;
+          });
+
+          pubListEl.innerHTML = "";
+          if (items.length === 0) {
+            const div = document.createElement("div");
+            div.style.padding = "12px";
+            div.style.color = "#888";
+            div.textContent = "No published levels.";
+            pubListEl.appendChild(div);
+            pubDetailTitleEl.textContent = "Select a level";
+            pubDetailMetaEl.textContent = "No results.";
+            btnPlaySelectedPublished.disabled = true;
+            adminRatingBoxEl.style.display = "none";
+            return;
+          }
+
+          for (const it of items) {
+            const row = document.createElement("div");
+            row.className =
+              "item" + (it.id === selectedPublishedId ? " active" : "");
+            row.innerHTML = `<div class="name">${esc(it.name || it.id)}</div><div class="sub">by ${esc(it.author || "Unknown")} · diff: ${esc(difficultyLabel(it))} · ID: ${esc(it.id)}</div>`;
+            row.addEventListener("click", () => {
+              selectedPublishedId = it.id;
+              renderPublishedBrowser();
+              setPublishedDetail(it);
+            });
+            pubListEl.appendChild(row);
+          }
+
+          if (
+            !selectedPublishedId ||
+            !items.some((x) => x.id === selectedPublishedId)
+          ) {
+            selectedPublishedId = items[0].id;
+            setPublishedDetail(items[0]);
+          } else {
+            const cur =
+              items.find((x) => x.id === selectedPublishedId) || items[0];
+            setPublishedDetail(cur);
+          }
+        }
+
+        async function refreshPublishedLevels(force = false) {
+          publishedLevels = Array.isArray(levelsCache.items)
+            ? levelsCache.items
+            : [];
+          renderPublishedBrowser();
+          if (!firebaseOk || !isOnline()) return;
+          if (
+            !force &&
+            levelsCache.fetchedAt &&
+            nowMs() - levelsCache.fetchedAt < 55000
+          )
+            return;
+          try {
+            const snap = await fb.get("levels");
+            const items = [];
+            if (snap.exists()) {
+              snap.forEach((child) => {
+                const v = child.val() || {};
+                if (v && v.id && v.level) {
+                  const lvl =
+                    v.level && v.level.level ? v.level.level : v.level;
+                  if (lvl)
+                    items.push({
+                      id: String(v.id),
+                      name: String(v.name || v.id),
+                      author: String(v.author || "Unknown"),
+                      level: lvl,
+                      difficulty: v.difficulty || null,
+                    });
+                }
+              });
+            }
+            items.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+            publishedLevels = items;
+            levelsCache = { fetchedAt: nowMs(), items, lastError: "" };
+            saveJSON(CACHE_KEYS.publishedLevels, levelsCache);
+            renderPublishedBrowser();
+          } catch {
+            levelsCache.lastError = "Failed to load published levels.";
+            saveJSON(CACHE_KEYS.publishedLevels, levelsCache);
+            publishedLevels = Array.isArray(levelsCache.items)
+              ? levelsCache.items
+              : [];
+            renderPublishedBrowser();
+          }
+        }
+
+        async function adminSaveDifficulty(levelId, rating) {
+          if (!isAdmin()) throw new Error("Not admin.");
+          if (!canWriteRemote() || !fb)
+            throw new Error("Offline or Firebase unavailable.");
+          const r = Number(rating);
+          if (!Number.isFinite(r) || r < 1 || r > 10)
+            throw new Error("Invalid rating.");
+          const adminUser = currentUsername();
+          await fb.set(`difficultyRatings/${levelId}/${adminUser}`, {
+            rating: r,
+            updatedAt: Date.now(),
+          });
+          const snap = await fb.get(`difficultyRatings/${levelId}`);
+          let sum = 0,
+            count = 0;
+          if (snap.exists()) {
+            snap.forEach((child) => {
+              const v = child.val() || {};
+              const rr = Number(v.rating);
+              if (Number.isFinite(rr) && rr >= 1 && rr <= 10) {
+                sum += rr;
+                count += 1;
+              }
+            });
+          }
+          const avg = count ? sum / count : 0;
+          await fb.set(`levels/${levelId}/difficulty`, {
+            avg: avg || 0,
+            count,
+            updatedAt: Date.now(),
+          });
+        }
+
+        async function awardStarsForPublishedWinOncePerLevel(levelId) {
+          if (starsAwardedThisWin) return;
+          if (!canWriteRemote() || !isLoggedIn()) return;
+          const username = currentUsername();
+          try {
+            const doneSnap = await fb.get(
+              `stars/completions/${username}/${levelId}`,
+            );
+            if (doneSnap.exists() && doneSnap.val()) {
+              starsAwardedThisWin = true;
+              winNoteEl.textContent = "Already earned stars for this level.";
+              return;
+            }
+            const p = publishedById(levelId);
+            if (!p) return;
+            const avg = difficultyFromItem(p);
+            if (!(avg > 0)) return;
+            const starsToAdd = clamp(Math.round(avg), 1, 10);
+            const userSnap = await fb.get(`stars/users/${username}`);
+            const cur = userSnap.exists() ? userSnap.val() || {} : {};
+            const prev = Number(cur.totalStars) || 0;
+            const next = prev + starsToAdd;
+            await fb.set(`stars/users/${username}`, {
+              username,
+              totalStars: next,
+              updatedAt: Date.now(),
+            });
+            await fb.set(`stars/completions/${username}/${levelId}`, {
+              earned: starsToAdd,
+              at: Date.now(),
+            });
+            starsAwardedThisWin = true;
+            winNoteEl.textContent = `You earned ${starsToAdd}★ (Total: ${next}★).`;
+            refreshStarsLeaderboard(true);
+          } catch {}
+        }
+
+        function openEditor(id) {
+          editorLevelId = id || customLevels[0]?.id || null;
+          const L =
+            customLevels.find((x) => x.id === editorLevelId) ||
+            customLevels[0] ||
+            defaultCustomLevel();
+          editorDraft = sanitizeLevel(L);
+          selected = null;
+          edJson.value = "";
+          beatenDraftToken = "";
+          markDraftDirty();
+          refreshCustomSelects();
+          edCustomSelect.value = editorLevelId;
+          syncUsernameIntoEditor();
+        }
+
+        function exportDraftObject() {
+          return {
+            id: editorDraft.id,
+            name: editorDraft.name,
+            spawn: editorDraft.spawn,
+            solids: editorDraft.solids,
+            spikes: editorDraft.spikes.map((s) => ({
+              x: s.x,
+              y: s.y,
+              w: s.w,
+              h: s.h,
+            })),
+            poles: editorDraft.poles.map((p) => ({
+              x: p.x,
+              y: p.y,
+              color: p.color,
+              power: p.power,
+              r: p.r ?? 16,
+            })),
+            portals: (editorDraft.portals || []).map((t) => ({
+              x: t.x,
+              y: t.y,
+              w: t.w,
+              h: t.h,
+              to: t.to,
+            })),
+            finish: {
+              x: editorDraft.finish.x,
+              y: editorDraft.finish.y,
+              w: editorDraft.finish.w,
+              h: editorDraft.finish.h,
+            },
+          };
+        }
+
+        function currentLevel() {
+          if (playMode === PLAYMODE.CAMPAIGN)
+            return campaignLevels[campaignIndex];
+          return customPlayLevel;
+        }
+
+        function loadForPlay(levelObj) {
+          player.x = levelObj.spawn.x;
+          player.y = levelObj.spawn.y;
+          player.vx = 0;
+          player.vy = 0;
+          player.onGround = false;
+          player.polarity = "blue";
+          player.switchCooldown = 0;
+          player.deadTimer = 0;
+          player.form = FORM.CUBE;
+          player.portalCooldown = 0;
+        }
+
+        function isFinalCampaignWin() {
+          return (
+            playMode === PLAYMODE.CAMPAIGN &&
+            hasWon &&
+            campaignIndex === campaignLevels.length - 1
+          );
+        }
+        function updateWinButtons() {
+          const eligible =
+            isFinalCampaignWin() && campaignStartIndex === 0 && !skippedAny;
+          const canSubmit = eligible && canWriteRemote() && !submittedThisRun;
+          submitTimeBtn.style.display = eligible ? "inline-block" : "none";
+          submitTimeBtn.disabled = !canSubmit;
+        }
+
+        function showWin() {
+          hasWon = true;
+          runElapsedMs = performance.now() - runStartMs;
+          winTimeEl.textContent = `Time: ${formatTime(runElapsedMs)}`;
+          winEl.style.display = "flex";
+          updateWinButtons();
+          if (
+            playMode === PLAYMODE.CUSTOM &&
+            customPlaySource === "published"
+          ) {
+            awardStarsForPublishedWinOncePerLevel(customPlayId);
+          }
+          if (playMode === PLAYMODE.CUSTOM && customPlaySource === "draft") {
+            beatenDraftToken = editorDraftToken;
+            updateEditorPublishEnabled();
+          }
+        }
+        function hideWin() {
+          hasWon = false;
+          winEl.style.display = "none";
+        }
+
+        function restartRun() {
+          hideWin();
+          submittedThisRun = false;
+          skippedAny = false;
+          starsAwardedThisWin = false;
+          winNoteEl.textContent = "";
+          runStartMs = performance.now();
+
+          if (playMode === PLAYMODE.CAMPAIGN) {
+            campaignIndex = clamp(
+              campaignStartIndex,
+              0,
+              campaignLevels.length - 1,
+            );
+            loadForPlay(campaignLevels[campaignIndex]);
+            return;
+          }
+
+          if (customPlaySource === "draft" && customDraftForPlay) {
+            customPlayLevel = sanitizeLevel(customDraftForPlay);
+            loadForPlay(customPlayLevel);
+            return;
+          }
+
+          if (customPlaySource === "published") {
+            const p = publishedById(customPlayId);
+            if (p && p.level) {
+              customPlayLevel = sanitizeLevel(p.level);
+              loadForPlay(customPlayLevel);
+              return;
+            }
+            customPlaySource = "saved";
+          }
+
+          const L =
+            customLevels.find((x) => x.id === customPlayId) || customLevels[0];
+          customPlayId = L.id;
+          customPlayLevel = sanitizeLevel(L);
+          loadForPlay(customPlayLevel);
+        }
+
+        function skipCampaignLevel() {
+          if (playMode !== PLAYMODE.CAMPAIGN) return;
+          if (hasWon) return;
+          skippedAny = true;
+          if (campaignIndex >= campaignLevels.length - 1) {
+            showWin();
+            return;
+          }
+          campaignIndex += 1;
+          loadForPlay(campaignLevels[campaignIndex]);
+        }
+
+        function applyPortals(L) {
+          if (player.portalCooldown > 0) return;
+          const pr = { x: player.x, y: player.y, w: player.w, h: player.h };
+          for (const t of L.portals || []) {
+            const hit =
+              player.form === FORM.SHIP ? shipHitsRect(t) : aabb(pr, t);
+            if (hit) {
+              player.form = t.to === "ship" ? FORM.SHIP : FORM.CUBE;
+              player.onGround = false;
+              player.portalCooldown = 0.35;
+              player.vy = 0;
+              break;
+            }
+          }
+        }
+
+        const GRAVITY = 1800;
+        const MOVE_ACC = 3200;
+        const MOVE_MAX = 320;
+        const JUMP_V = 620;
+        const FRICTION = 2200;
+
+        const MAGNET_RANGE = 520;
+        const MAGNET_STRENGTH = 240000;
+        const MAGNET_MAX_A = 12000;
+        const MAGNET_MIN_D = 18;
+        const DRAG_X = 5.5;
+        const DRAG_Y = 1.2;
+        const VX_CAP = 900;
+        const VY_CAP = 1700;
+
+        const SHIP_GRAV = 800;
+        const SHIP_THRUST = 2300;
+        const SHIP_DRAG = 0.35;
+
+        function accelFromMagnet(px, py, m) {
+          const dx = m.x - px,
+            dy = m.y - py;
+          const d = Math.max(Math.hypot(dx, dy), MAGNET_MIN_D);
+          if (d > MAGNET_RANGE) return { ax: 0, ay: 0 };
+          const ux = dx / d,
+            uy = dy / d;
+          const same = m.color === player.polarity;
+          const dir = same ? -1 : 1;
+          const fall = 1 - d / MAGNET_RANGE;
+          const a = clamp(
+            ((MAGNET_STRENGTH * fall) / d) * (m.power || 1.0),
+            0,
+            MAGNET_MAX_A,
+          );
+          return { ax: dir * a * ux, ay: dir * a * uy };
+        }
+        function magnetAccelAt(px, py, L) {
+          let ax = 0,
+            ay = 0;
+          for (const m of L.poles || []) {
+            const a = accelFromMagnet(px, py, m);
+            ax += a.ax;
+            ay += a.ay;
+          }
+          return { ax, ay };
+        }
+
+        function resolveCollisions(e, solids, dt) {
+          e.onGround = false;
+          e.x += e.vx * dt;
+          let r = { x: e.x, y: e.y, w: e.w, h: e.h };
+          for (const s of solids) {
+            if (!aabb(r, s)) continue;
+            if (e.vx > 0) e.x = s.x - e.w;
+            else if (e.vx < 0) e.x = s.x + s.w;
+            e.vx = 0;
+            r.x = e.x;
+          }
+          e.y += e.vy * dt;
+          r = { x: e.x, y: e.y, w: e.w, h: e.h };
+          for (const s of solids) {
+            if (!aabb(r, s)) continue;
+            if (e.vy > 0) {
+              e.y = s.y - e.h;
+              e.onGround = true;
+            } else if (e.vy < 0) {
+              e.y = s.y + s.h;
+            }
+            e.vy = 0;
+            r.y = e.y;
+          }
+        }
+
+        function kill() {
+          player.deadTimer = 0.45;
+        }
+        function dead() {
+          return player.deadTimer > 0;
+        }
+
+        function handleGlobalShortcuts() {
+          if (!pressed("Escape")) return;
+          keys.set("Escape", false);
+          if (mode === MODE.AUTH) {
+            setMode(MODE.MENU);
+            return;
+          }
+          if (mode === MODE.PUBLISHED) {
+            setMode(MODE.MENU);
+            return;
+          }
+          if (
+            mode === MODE.PLAY &&
+            playMode === PLAYMODE.CUSTOM &&
+            customPlaySource === "draft"
+          ) {
+            setMode(MODE.EDITOR);
+            return;
+          }
+          setMode(MODE.MENU);
+          customPlaySource = "saved";
+          customDraftForPlay = null;
+        }
+
+        let tPrev = performance.now();
+        let dt = 1 / 60;
+
+        function update() {
+          handleGlobalShortcuts();
+          updateNetPill();
+          updateUserPill();
+
+          if (
+            mode === MODE.MENU ||
+            mode === MODE.PUBLISHED ||
+            mode === MODE.AUTH
+          )
+            return;
+          if (mode === MODE.EDITOR) {
+            editorHotkeys();
+            return;
+          }
+
+          if (hasWon) {
+            if (pressed("KeyR")) {
+              keys.set("KeyR", false);
+              restartRun();
+            }
+            return;
+          }
+
+          if (pressed("KeyO")) {
+            keys.set("KeyO", false);
+            skipCampaignLevel();
+            return;
+          }
+
+          const L = currentLevel();
+
+          if (player.deadTimer > 0) {
+            player.deadTimer -= dt;
+            if (player.deadTimer <= 0) loadForPlay(L);
+            return;
+          }
+
+          if (player.portalCooldown > 0) player.portalCooldown -= dt;
+
+          if (player.switchCooldown > 0) player.switchCooldown -= dt;
+          if (pressed("ArrowDown") && player.switchCooldown <= 0) {
+            player.polarity = player.polarity === "blue" ? "red" : "blue";
+            player.switchCooldown = 0.18;
+          }
+
+          if (pressed("KeyR")) {
+            keys.set("KeyR", false);
+            loadForPlay(L);
+          }
+
+          const left = pressed("ArrowLeft") || pressed("KeyA"),
+            right = pressed("ArrowRight") || pressed("KeyD"); 
+          if (left && !right) player.vx -= MOVE_ACC * dt;
+          else if (right && !left) player.vx += MOVE_ACC * dt;
+          else {
+            const fr = FRICTION * dt;
+            if (Math.abs(player.vx) <= fr) player.vx = 0;
+            else player.vx -= sign(player.vx) * fr;
+          }
+          player.vx = clamp(player.vx, -MOVE_MAX, MOVE_MAX);
+
+          if (player.form === FORM.CUBE) {
+            const jump = pressed("ArrowUp") || pressed("Space") || pressed("KeyW");
+            if (jump && player.onGround) {
+              player.vy = -JUMP_V;
+              player.onGround = false;
+            }
+
+            player.vy += GRAVITY * dt;
+
+            const cx = player.x + player.w / 2,
+              cy = player.y + player.h / 2;
+            const mag = magnetAccelAt(cx, cy, L);
+            player.vx += mag.ax * dt;
+            player.vy += mag.ay * dt;
+
+            player.vx -= player.vx * DRAG_X * dt;
+            player.vy -= player.vy * DRAG_Y * dt;
+
+            player.vx = clamp(player.vx, -VX_CAP, VX_CAP);
+            player.vy = clamp(player.vy, -VY_CAP, VY_CAP);
+
+            resolveCollisions(player, L.solids, dt);
+            applyPortals(L);
+
+            const pr = { x: player.x, y: player.y, w: player.w, h: player.h };
+            for (const sp of L.spikes) {
+              if (aabb(pr, sp)) {
+                kill();
+                break;
+              }
+            }
+
+            if (!dead() && aabb(pr, L.finish)) {
+              if (playMode === PLAYMODE.CAMPAIGN) {
+                if (campaignIndex === campaignLevels.length - 1) {
+                  showWin();
+                } else {
+                  campaignIndex += 1;
+                  loadForPlay(campaignLevels[campaignIndex]);
+                }
+              } else {
+                showWin();
+              }
+            }
+
+            if (player.y > H + 200) kill();
+          } else {
+            const thrust = pressed("ArrowUp") || pressed("Space") || pressed("KeyW");
+            if (thrust) player.vy -= SHIP_THRUST * dt;
+            player.vy += SHIP_GRAV * dt;
+
+            const cx = player.x + 11,
+              cy = player.y + 11;
+            const mag = magnetAccelAt(cx, cy, L);
+            player.vx += mag.ax * dt;
+            player.vy += mag.ay * dt;
+
+            player.vx -= player.vx * SHIP_DRAG * dt;
+            player.vy -= player.vy * 0.25 * dt;
+
+            player.vx = clamp(player.vx, -VX_CAP, VX_CAP);
+            player.vy = clamp(player.vy, -VY_CAP, VY_CAP);
+
+            player.x += player.vx * dt;
+            player.y += player.vy * dt;
+
+            for (const s of L.solids) {
+              if (shipHitsRect(s)) {
+                kill();
+                break;
+              }
+            }
+            if (!dead()) {
+              for (const sp of L.spikes) {
+                if (shipHitsRect(sp)) {
+                  kill();
+                  break;
+                }
+              }
+            }
+
+            if (!dead()) {
+              applyPortals(L);
+              if (shipHitsRect(L.finish)) {
+                if (playMode === PLAYMODE.CAMPAIGN) {
+                  if (campaignIndex === campaignLevels.length - 1) {
+                    showWin();
+                  } else {
+                    campaignIndex += 1;
+                    loadForPlay(campaignLevels[campaignIndex]);
+                  }
+                } else {
+                  showWin();
+                }
+              }
+            }
+
+            if (
+              player.y > H + 200 ||
+              player.y < -200 ||
+              player.x < -200 ||
+              player.x > W + 200
+            )
+              kill();
+          }
+        }
+
+        function drawGrid() {
+          const step = 40;
+          ctx.save();
+          ctx.globalAlpha = 0.2;
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1;
+          for (let x = 0; x <= W; x += step) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, H);
+            ctx.stroke();
+          }
+          for (let y = 0; y <= H; y += step) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        function drawShip(x, y) {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(22, 11);
+          ctx.lineTo(0, 22);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+
+        function drawSelection() {
+          if (mode !== MODE.EDITOR || !selected) return;
+          const obj = getSelectedObjectRef(selected);
+          if (!obj) return;
+          ctx.save();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "#ffd54a";
+          if (selected.kind === "pole") {
+            ctx.beginPath();
+            ctx.arc(obj.x, obj.y, (obj.r ?? 16) + 10, 0, Math.PI * 2);
+            ctx.stroke();
+          } else if (selected.kind === "spawn") {
+            ctx.beginPath();
+            ctx.arc(obj.x, obj.y, 14, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = "#ffd54a";
+            ctx.fillRect(obj.x - 2, obj.y - 2, 4, 4);
+          } else {
+            ctx.strokeRect(obj.x - 2, obj.y - 2, obj.w + 4, obj.h + 4);
+            ctx.fillStyle = "#ffd54a";
+            ctx.fillRect(obj.x + obj.w - 4, obj.y + obj.h - 4, 8, 8);
+          }
+          ctx.restore();
+        }
+
+        function draw() {
+          ctx.clearRect(0, 0, W, H);
+          drawGrid();
+
+          let L = null;
+          if (mode === MODE.EDITOR) L = editorDraft;
+          else if (mode === MODE.PLAY) L = currentLevel();
+
+          if (L) {
+            ctx.fillStyle = "#5b6472";
+            for (const s of L.solids) ctx.fillRect(s.x, s.y, s.w, s.h);
+
+            ctx.fillStyle = "#e05a5a";
+            for (const sp of L.spikes) ctx.fillRect(sp.x, sp.y, sp.w, sp.h);
+
+            for (const m of L.poles || []) {
+              ctx.fillStyle = m.color === "blue" ? "#4d79ff" : "#ff4d4d";
+              const rr =
+                (m.r ?? 16) + Math.max(0, Math.round(((m.power || 1) - 1) * 3));
+              ctx.beginPath();
+              ctx.arc(m.x, m.y, rr, 0, Math.PI * 2);
+              ctx.fill();
+            }
+
+            for (const t of L.portals || []) {
+              ctx.fillStyle = t.to === "ship" ? "#9b59ff" : "#f1c40f";
+              ctx.fillRect(t.x, t.y, t.w, t.h);
+            }
+
+            ctx.fillStyle = "#50d26a";
+            ctx.fillRect(L.finish.x, L.finish.y, L.finish.w, L.finish.h);
+
+            if (mode === MODE.EDITOR) {
+              ctx.strokeStyle = "#ffe066";
+              ctx.beginPath();
+              ctx.arc(L.spawn.x, L.spawn.y, 10, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.fillStyle = "#ffe066";
+              ctx.fillRect(L.spawn.x - 2, L.spawn.y - 2, 4, 4);
+              drawSelection();
+            }
+
+            if (mode === MODE.PLAY) {
+              if (player.form === FORM.CUBE) {
+                ctx.fillStyle =
+                  player.polarity === "blue" ? "#4d79ff" : "#ff4d4d";
+                ctx.fillRect(player.x, player.y, player.w, player.h);
+              } else {
+                drawShip(player.x, player.y);
+              }
+            }
+          }
+
+          if (mode === MODE.MENU) {
+            hudEl.innerHTML = `<div>${esc("Main Menu")}</div><div>${esc(isLoggedIn() ? `Logged in: ${currentUsername()}${isAdmin() ? " (Admin)" : ""}` : "Not logged in")}</div>`;
+          } else if (mode === MODE.AUTH) {
+            hudEl.innerHTML = `<div>${esc("Account | Esc closes")}</div><div></div>`;
+          } else if (mode === MODE.EDITOR) {
+            hudEl.innerHTML = `<div>${esc(`Editor | ${editorDraft.name} | ${isDraftBeaten() || isAdmin() ? "Publish unlocked" : "Publish locked"} | Esc menu`)}</div><div></div>`;
+          } else if (mode === MODE.PUBLISHED) {
+            hudEl.innerHTML = `<div>${esc("Published Levels Browser | Esc closes")}</div><div></div>`;
+          } else {
+            if (hasWon) {
+              hudEl.innerHTML = `<div>${esc(`Completed in ${formatTime(runElapsedMs)} | R restart | Esc menu`)}</div><div></div>`;
+            } else {
+              const formLabel = player.form === FORM.SHIP ? "SHIP" : "CUBE";
+              const lvlLabel =
+                playMode === PLAYMODE.CAMPAIGN
+                  ? `Campaign ${campaignIndex + 1}/${campaignLevels.length}`
+                  : `Custom`;
+              const extra = playMode === PLAYMODE.CAMPAIGN ? " | O skip" : "";
+              hudEl.innerHTML = `<div>${esc(`${lvlLabel} | Gamemode: ${formLabel} | Polarity: ${player.polarity.toUpperCase()}${extra} | R restart | Esc menu`)}</div><div></div>`;
+            }
+          }
+        }
+
+        function loop(now) {
+          let frameDt = Math.min(1 / 30, (now - tPrev) / 1000);
+          tPrev = now;
+          const steps = Math.max(1, Math.ceil(frameDt / (1 / 120)));
+          const sub = frameDt / steps;
+          for (let i = 0; i < steps; i++) {
+            dt = sub;
+            update();
+          }
+          draw();
+          requestAnimationFrame(loop);
+        }
+
+        let selected = null;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let origObj = null;
+
+        function canvasToWorld(evt) {
+          const r = canvas.getBoundingClientRect();
+          const x = (evt.clientX - r.left) * (W / r.width);
+          const y = (evt.clientY - r.top) * (H / r.height);
+          return { x, y };
+        }
+        function pointInRect(px, py, r) {
+          return px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+        }
+        function nearestObject(px, py) {
+          const R2 = 26 * 26;
+          for (let i = editorDraft.solids.length - 1; i >= 0; i--) {
+            const s = editorDraft.solids[i];
+            if (pointInRect(px, py, s)) return { kind: "solid", idx: i };
+          }
+          for (let i = editorDraft.spikes.length - 1; i >= 0; i--) {
+            const s = editorDraft.spikes[i];
+            if (pointInRect(px, py, s)) return { kind: "spike", idx: i };
+          }
+          for (let i = (editorDraft.portals || []).length - 1; i >= 0; i--) {
+            const t = editorDraft.portals[i];
+            if (pointInRect(px, py, t)) return { kind: "portal", idx: i };
+          }
+          if (pointInRect(px, py, editorDraft.finish))
+            return { kind: "finish" };
+          for (let i = editorDraft.poles.length - 1; i >= 0; i--) {
+            const p = editorDraft.poles[i];
+            const rr = (p.r ?? 16) + 6;
+            if (dist2(px, py, p.x, p.y) <= rr * rr)
+              return { kind: "pole", idx: i };
+          }
+          if (dist2(px, py, editorDraft.spawn.x, editorDraft.spawn.y) <= R2)
+            return { kind: "spawn" };
+          return null;
+        }
+        function getSelectedObjectRef(sel) {
+          if (!sel) return null;
+          if (sel.kind === "solid") return editorDraft.solids[sel.idx];
+          if (sel.kind === "spike") return editorDraft.spikes[sel.idx];
+          if (sel.kind === "pole") return editorDraft.poles[sel.idx];
+          if (sel.kind === "portal") return editorDraft.portals[sel.idx];
+          if (sel.kind === "finish") return editorDraft.finish;
+          if (sel.kind === "spawn") return editorDraft.spawn;
+          return null;
+        }
+        function deleteSelected() {
+          if (!selected) return;
+          if (selected.kind === "solid")
+            editorDraft.solids.splice(selected.idx, 1);
+          else if (selected.kind === "spike")
+            editorDraft.spikes.splice(selected.idx, 1);
+          else if (selected.kind === "pole")
+            editorDraft.poles.splice(selected.idx, 1);
+          else if (selected.kind === "portal")
+            editorDraft.portals.splice(selected.idx, 1);
+          else if (selected.kind === "finish") {
+            editorDraft.finish.x = 900;
+            editorDraft.finish.y = 440;
+            editorDraft.finish.w = 40;
+            editorDraft.finish.h = 60;
+          } else if (selected.kind === "spawn") {
+            editorDraft.spawn.x = 70;
+            editorDraft.spawn.y = 420;
+          }
+          selected = null;
+          markDraftDirty();
+        }
+
+        canvas.addEventListener("contextmenu", (e) => {
+          if (mode === MODE.EDITOR) e.preventDefault();
+        });
+        canvas.addEventListener("mousedown", (evt) => {
+          if (mode !== MODE.EDITOR) return;
+          if (evt.button === 2) {
+            const { x, y } = canvasToWorld(evt);
+            const hit = nearestObject(x, y);
+            if (hit) {
+              selected = hit;
+              deleteSelected();
+            }
+            return;
+          }
+          const { x, y } = canvasToWorld(evt);
+          const tool = edTool.value;
+          const w = Math.max(1, parseInt(edW.value, 10) || 10);
+          const h = Math.max(1, parseInt(edH.value, 10) || 10);
+
+          if (tool === "erase") {
+            const hit = nearestObject(x, y);
+            if (hit) {
+              selected = hit;
+              deleteSelected();
+            }
+            return;
+          }
+          if (tool === "select") {
+            const hit = nearestObject(x, y);
+            selected = hit;
+            const obj = getSelectedObjectRef(selected);
+            if (obj) {
+              isDragging = true;
+              origObj = JSON.parse(JSON.stringify(obj));
+              dragOffset.x = x - obj.x;
+              dragOffset.y = y - obj.y;
+            }
+            return;
+          }
+
+          if (tool === "solid") {
+            editorDraft.solids.push({ x: x - w / 2, y: y - h / 2, w, h });
+            selected = { kind: "solid", idx: editorDraft.solids.length - 1 };
+          } else if (tool === "spike") {
+            editorDraft.spikes.push({
+              x: x - w / 2,
+              y: y - h / 2,
+              w,
+              h,
+              type: "spike",
+            });
+            selected = { kind: "spike", idx: editorDraft.spikes.length - 1 };
+          } else if (tool === "pole") {
+            const color = edPoleColor.value === "red" ? "red" : "blue";
+            const power = +edPolePower.value || 1.0;
+            editorDraft.poles.push({ x, y, color, power, r: 16, type: "pole" });
+            selected = { kind: "pole", idx: editorDraft.poles.length - 1 };
+          } else if (tool === "finish") {
+            editorDraft.finish.x = x - 20;
+            editorDraft.finish.y = y - 30;
+            editorDraft.finish.w = 40;
+            editorDraft.finish.h = 60;
+            selected = { kind: "finish" };
+          } else if (tool === "spawn") {
+            editorDraft.spawn.x = x;
+            editorDraft.spawn.y = y;
+            selected = { kind: "spawn" };
+          } else if (tool === "portalShip") {
+            editorDraft.portals.push({
+              x: x - 13,
+              y: y - 20,
+              w: 26,
+              h: 40,
+              type: "portal",
+              to: "ship",
+            });
+            selected = { kind: "portal", idx: editorDraft.portals.length - 1 };
+          } else if (tool === "portalCube") {
+            editorDraft.portals.push({
+              x: x - 13,
+              y: y - 20,
+              w: 26,
+              h: 40,
+              type: "portal",
+              to: "cube",
+            });
+            selected = { kind: "portal", idx: editorDraft.portals.length - 1 };
+          }
+
+          markDraftDirty();
+        });
+
+        window.addEventListener("mousemove", (evt) => {
+          if (mode !== MODE.EDITOR) return;
+          if (!isDragging || !selected) return;
+          const { x, y } = canvasToWorld(evt);
+          const obj = getSelectedObjectRef(selected);
+          if (!obj || !origObj) return;
+          const alt = evt.altKey === true;
+
+          if (selected.kind === "pole" || selected.kind === "spawn") {
+            obj.x = x - dragOffset.x;
+            obj.y = y - dragOffset.y;
+            markDraftDirty();
+            return;
+          }
+
+          if (!alt) {
+            obj.x = x - dragOffset.x;
+            obj.y = y - dragOffset.y;
+          } else {
+            const nx = origObj.x,
+              ny = origObj.y;
+            obj.x = nx;
+            obj.y = ny;
+            obj.w = Math.max(4, x - nx);
+            obj.h = Math.max(4, y - ny);
+          }
+          markDraftDirty();
+        });
+
+        window.addEventListener("mouseup", () => {
+          if (mode === MODE.EDITOR) {
+            isDragging = false;
+            origObj = null;
+          }
+        });
+
+        function editorHotkeys() {
+          if (mode !== MODE.EDITOR) return;
+          if (pressed("Digit1")) {
+            keys.set("Digit1", false);
+            edTool.value = "select";
+          }
+          if (pressed("Digit2")) {
+            keys.set("Digit2", false);
+            edTool.value = "solid";
+          }
+          if (pressed("Digit3")) {
+            keys.set("Digit3", false);
+            edTool.value = "spike";
+          }
+          if (pressed("Digit4")) {
+            keys.set("Digit4", false);
+            edTool.value = "pole";
+          }
+          if (pressed("Digit5")) {
+            keys.set("Digit5", false);
+            edTool.value = "finish";
+          }
+          if (pressed("Digit6")) {
+            keys.set("Digit6", false);
+            edTool.value = "spawn";
+          }
+          if (pressed("Digit7")) {
+            keys.set("Digit7", false);
+            edTool.value = "erase";
+          }
+          if (pressed("Digit8")) {
+            keys.set("Digit8", false);
+            edTool.value = "portalShip";
+          }
+          if (pressed("Digit9")) {
+            keys.set("Digit9", false);
+            edTool.value = "portalCube";
+          }
+          if (pressed("Delete") || pressed("Backspace")) {
+            keys.set("Delete", false);
+            keys.set("Backspace", false);
+            deleteSelected();
+          }
+        }
+
+        btnPlayCampaign.addEventListener("click", () => {
+          playMode = PLAYMODE.CAMPAIGN;
+          campaignStartIndex = clamp(
+            parseInt(campaignStartSel.value, 10) || 0,
+            0,
+            campaignLevels.length - 1,
+          );
+          setMode(MODE.PLAY);
+          restartRun();
+        });
+        campaignStartSel.addEventListener("change", () => {
+          campaignStartIndex = clamp(
+            parseInt(campaignStartSel.value, 10) || 0,
+            0,
+            campaignLevels.length - 1,
+          );
+        });
+
+        btnPlayCustom.addEventListener("click", () => {
+          playMode = PLAYMODE.CUSTOM;
+          customPlayId = customSelectSel.value || customLevels[0]?.id || null;
+          customPlaySource = "saved";
+          customDraftForPlay = null;
+          setMode(MODE.PLAY);
+          restartRun();
+        });
+
+        btnBrowsePublished.addEventListener("click", () => {
+          setMode(MODE.PUBLISHED);
+          renderPublishedBrowser();
+          refreshPublishedLevels(true);
+        });
+        btnClosePublished.addEventListener("click", () => setMode(MODE.MENU));
+        btnRefreshPublishedScreen.addEventListener("click", () =>
+          refreshPublishedLevels(true),
+        );
+        pubSearchEl.addEventListener("input", () => renderPublishedBrowser());
+
+        btnPlaySelectedPublished.addEventListener("click", () => {
+          if (!selectedPublishedId) return;
+          const p = publishedById(selectedPublishedId);
+          if (!p) return;
+          const lvl = p.level && p.level.level ? p.level.level : p.level;
+          if (!lvl) return;
+          playMode = PLAYMODE.CUSTOM;
+          customPlayId = selectedPublishedId;
+          customPlaySource = "published";
+          customDraftForPlay = null;
+          customPlayLevel = sanitizeLevel(lvl);
+          setMode(MODE.PLAY);
+          restartRun();
+        });
+
+        btnRefreshLeaderboard.addEventListener("click", () =>
+          refreshLeaderboard(true),
+        );
+        btnRefreshStars.addEventListener("click", () =>
+          refreshStarsLeaderboard(true),
+        );
+        playAgainBtn.addEventListener("click", restartRun);
+
+        submitTimeBtn.addEventListener("click", async () => {
+          const eligible =
+            isFinalCampaignWin() && campaignStartIndex === 0 && !skippedAny;
+          if (!eligible) return;
+          if (!canWriteRemote()) return;
+          if (submittedThisRun) return;
+          const name = (prompt("Name (optional):", "") || "").trim();
+          const timeMs = Math.round(runElapsedMs);
+          if (!Number.isFinite(timeMs) || timeMs <= 0) return;
+          try {
+            await fb.push("leaderboards/campaign/runs", {
+              name: name || "Anonymous",
+              timeMs,
+              createdAt: Date.now(),
+              version: 1,
+              skippedAny: false,
+            });
+            submittedThisRun = true;
+            refreshLeaderboard(true);
+            updateWinButtons();
+          } catch {}
+        });
+
+        btnOpenEditor.addEventListener("click", () => {
+          setMode(MODE.EDITOR);
+          openEditor(customSelectSel.value || customLevels[0]?.id);
+        });
+        edCustomSelect.addEventListener("change", () =>
+          openEditor(edCustomSelect.value),
+        );
+
+        edNew.addEventListener("click", () => {
+          const L = defaultCustomLevel();
+          L.name = `Custom Level ${customLevels.length + 1}`;
+          customLevels.push(sanitizeLevel(L));
+          saveCustomLevels();
+          openEditor(customLevels[customLevels.length - 1].id);
+          refreshCustomSelects();
+        });
+
+        edDuplicate.addEventListener("click", () => {
+          const base = sanitizeLevel(editorDraft);
+          base.id =
+            Math.random().toString(16).slice(2) +
+            Math.random().toString(16).slice(2);
+          base.name = `${base.name} (Copy)`;
+          customLevels.push(base);
+          saveCustomLevels();
+          openEditor(base.id);
+          refreshCustomSelects();
+        });
+
+        edDelete.addEventListener("click", () => {
+          if (customLevels.length <= 1) return;
+          const idx = customLevels.findIndex((x) => x.id === editorLevelId);
+          if (idx >= 0) customLevels.splice(idx, 1);
+          saveCustomLevels();
+          openEditor(
+            customLevels[Math.max(0, idx - 1)]?.id || customLevels[0].id,
+          );
+          refreshCustomSelects();
+        });
+
+        edBack.addEventListener("click", () => {
+          setMode(MODE.MENU);
+          customPlaySource = "saved";
+          customDraftForPlay = null;
+        });
+
+        edSave.addEventListener("click", () => {
+          const idx = customLevels.findIndex((x) => x.id === editorLevelId);
+          if (idx >= 0) {
+            const saved = sanitizeLevel(editorDraft);
+            saved.id = editorLevelId;
+            customLevels[idx] = saved;
+            saveCustomLevels();
+            refreshCustomSelects();
+          }
+        });
+
+        edExport.addEventListener("click", () => {
+          edJson.value = JSON.stringify(exportDraftObject(), null, 2);
+        });
+        edImport.addEventListener("click", () => {
+          try {
+            const obj = JSON.parse(edJson.value || "{}");
+            const imported = sanitizeLevel(obj);
+            imported.id = editorLevelId;
+            editorDraft = imported;
+            selected = null;
+            markDraftDirty();
+          } catch {}
+        });
+
+        edTest.addEventListener("click", () => {
+          playMode = PLAYMODE.CUSTOM;
+          customPlayId = editorLevelId;
+          customPlaySource = "draft";
+          customDraftForPlay = sanitizeLevel(editorDraft);
+          customPlayLevel = sanitizeLevel(customDraftForPlay);
+          editorDraftToken = stableDraftToken(editorDraft);
+          beatenDraftToken = "";
+          setMode(MODE.PLAY);
+          hideWin();
+          submittedThisRun = false;
+          starsAwardedThisWin = false;
+          runStartMs = performance.now();
+          loadForPlay(customPlayLevel);
+        });
+
+        edPublishInfo.addEventListener("click", () =>
+          alert(
+            "Non-admins must beat a draft to publish. Admins can publish anytime.",
+          ),
+        );
+        edPublish.addEventListener("click", async () => {
+          if (!canWriteRemote()) return;
+          if (!isLoggedIn()) {
+            setMode(MODE.AUTH);
+            return;
+          }
+
+          
+          
+          if (!isDraftBeaten() && !isAdmin()) return;
+          const author = currentUsername();
+          const name = (
+            prompt(
+              "Published level name:",
+              editorDraft.name || "Untitled Level",
+            ) || ""
+          ).trim();
+          if (!name) return;
+          const levelId = String(
+            editorLevelId ||
+              editorDraft.id ||
+              Math.random().toString(16).slice(2),
+          );
+          const payload = {
+            id: levelId,
+            name,
+            author,
+            level: exportDraftObject(),
+            difficulty: null,
+            updatedAt: fb.serverTimestamp(),
+          };
+          try {
+            await fb.set(`levels/${levelId}`, payload);
+            refreshPublishedLevels(true);
+          } catch {}
+        });
+
+        btnOpenAuth.addEventListener("click", () => {
+          setMode(MODE.AUTH);
+          updateAuthUI();
+        });
+        btnCloseAuth.addEventListener("click", () => setMode(MODE.MENU));
+
+        btnSignup.addEventListener("click", async () => {
+          try {
+            authStatusEl.className = "status";
+            authStatusEl.textContent = "Signing up...";
+            await signup(authUsernameEl.value, authPasswordEl.value);
+            authPasswordEl.value = "";
+            updateAuthUI("Signed up.");
+            refreshStarsLeaderboard(true);
+            setMode(MODE.MENU);
+          } catch (e) {
+            updateAuthUI(e?.message || "Signup failed.", true);
+          }
+        });
+
+        btnLogin.addEventListener("click", async () => {
+          try {
+            authStatusEl.className = "status";
+            authStatusEl.textContent = "Logging in...";
+            await login(authUsernameEl.value, authPasswordEl.value);
+            authPasswordEl.value = "";
+            updateAuthUI("Logged in.");
+            refreshStarsLeaderboard(true);
+            setMode(MODE.MENU);
+          } catch (e) {
+            updateAuthUI(e?.message || "Login failed.", true);
+          }
+        });
+
+        btnLogout.addEventListener("click", () => {
+          clearAuthUser();
+          updateAuthUI("Logged out.");
+        });
+
+        btnAdminSaveRating.addEventListener("click", async () => {
+          if (!isAdmin()) return;
+          if (!selectedPublishedId) return;
+          try {
+            btnAdminSaveRating.disabled = true;
+            await adminSaveDifficulty(
+              selectedPublishedId,
+              Number(adminRatingSelEl.value || "1"),
+            );
+            await refreshPublishedLevels(true);
+            const it = publishedById(selectedPublishedId);
+            if (it) setPublishedDetail(it);
+          } catch (e) {
+            alert(e?.message || "Failed to save rating.");
+          } finally {
+            btnAdminSaveRating.disabled = false;
+          }
+        });
+
+        function initUI() {
+          tryRestoreSession();
+          refreshCampaignStart();
+          refreshCustomSelects();
+          editorLevelId = customLevels[0]?.id || null;
+          openEditor(editorLevelId);
+          updateAuthUI();
+          syncUsernameIntoEditor();
+          renderLeaderboard(lbCache.items || [], lbCache.lastError || "");
+          renderPublishedBrowser();
+          renderStarsLeaderboard(
+            starsCache.items || [],
+            starsCache.lastError || "",
+          );
+          requestAnimationFrame(loop);
+        }
+
+        async function boot() {
+          initUI();
+          await initFirebase({ timeoutMs: 1200 });
+          updateNetPill();
+          await refreshLeaderboard(true);
+          await refreshPublishedLevels(true);
+          await refreshStarsLeaderboard(true);
+          setInterval(() => {
+            refreshLeaderboard(false);
+            refreshPublishedLevels(false);
+            refreshStarsLeaderboard(false);
+          }, 60000);
+        }
+
+        boot().catch(showFatal);
+
+        window.addEventListener("online", () => {
+          initFirebase({ timeoutMs: 1200 }).then(() => {
+            updateNetPill();
+            refreshLeaderboard(true);
+            refreshPublishedLevels(true);
+            refreshStarsLeaderboard(true);
+          });
+        });
+        window.addEventListener("offline", () => {
+          updateNetPill();
+        });
+      })();
+    </script>
+  </body>
+</html>
